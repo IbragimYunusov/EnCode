@@ -7,10 +7,10 @@ use gtk4::glib::object::Cast;
 use idl::get_attr;
 
 
+/*
 #[no_mangle]
 pub extern "C" fn save_cur_file(data: idl::Data) -> Res<()>
 {
-    let data = data.borrow();
     let notebook = get_attr!(data.gui.as_ref.notebook);
     let cur_page = &notebook
         .nth_page(Some(get_attr!(notebook.current_page)))
@@ -38,7 +38,6 @@ pub extern "C" fn save_cur_file(data: idl::Data) -> Res<()>
 #[no_mangle]
 pub extern "C" fn save_all_files(data: idl::Data) -> Res<()>
 {
-    let data = data.borrow();
     let notebook = get_attr!(data.gui.as_ref.notebook);
     for i in 0..notebook.n_pages() {
         let cur_page = &notebook
@@ -76,7 +75,6 @@ macro_rules! std_dialog_with_entries {
     } => {
         #[no_mangle]
         pub extern "C" fn $func(data: idl::Data) -> Res<()> {
-            let data = data.borrow();
 
             let dialog = gtk4::Dialog::builder()
                 .transient_for(get_attr!(data.gui.as_ref.window))
@@ -339,3 +337,4 @@ std_dialog_with_entries! {
         return Some(());
     }();};
 }
+*/

@@ -3,21 +3,31 @@ use gtk4::{
     Align,
     ApplicationWindow,
     Box,
+    Builder,
     Button,
     Orientation,
 };
 use glib::clone;
 
+use std::ffi::CStr;
+
 use crate::app::func::launcher as f_launcher;
-
 use super::show_error_dialog;
+use crate::plug::inter_data::DATA as INTER_DATA;
 
 
-pub fn build_ui(window: ApplicationWindow) -> idl::Gui
+pub fn build_ui(window: ApplicationWindow) -> Builder
 {
+    let builder = Builder::new();
     window.set_title(Some("EnCode — Лаунчер"));
     window.set_default_width(800);
     window.set_default_height(500);
+    builder.expose_object(
+        &*INTER_DATA.with_borrow(
+            |d| unsafe{CStr::from_ptr(d.gui_ids.app_window_id).to_string_lossy()},
+        ),
+        &window,
+    );
     let vbox = Box::builder()
         .orientation(Orientation::Vertical)
         .spacing(super::INNER_SPACING)
@@ -29,7 +39,7 @@ pub fn build_ui(window: ApplicationWindow) -> idl::Gui
     create_image(&window, &vbox);
     create_buttons(&window, &vbox);
     window.set_child(Some(&vbox));
-    return idl::Gui::LAUNCHER{window};
+    return builder;
 }
 
 

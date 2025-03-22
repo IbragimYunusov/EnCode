@@ -7,7 +7,7 @@ fn main()
     app::main();
     if let app::AppType::EDITOR(_) = &*app::APP_TYPE {
         plug::inter_data::DATA.with(
-            |data| plug::funcs::start(std::rc::Rc::clone(data)),
+            |data| unsafe {plug::funcs::start(&mut *data.borrow_mut())},
         );
     }
 }

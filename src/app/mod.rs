@@ -30,7 +30,7 @@ pub fn define_app_type() -> AppType {
 pub fn define_app_id() -> String {
     return match &*APP_TYPE {
         AppType::LAUNCHER => "EnCode.launcher".to_string(),
-        AppType::EDITOR(_) => "EncCode.editor".to_string(),
+        AppType::EDITOR(_) => "EnCode.editor".to_string(),
     };
 }
 
@@ -56,25 +56,11 @@ pub fn main() -> ExitCode {
             let app = data.borrow();
             app.connect_activate(|app| {ui::build_ui(app);});
             app.connect_open(|application, _, _| {
-                let ret = ui::build_ui(application);
-                crate::plug::inter_data::DATA.with(|data| {
-                    match *data.borrow_mut() {
-                        idl::InterData::V0_0_0{ref mut app, ref mut gui, ..} => {
-                            *gui = Some(ret);
-                            *app = Some(application.clone());
-                        },
-                    }
+                let mut ui_ret = ui::build_ui(application);
+                crate::plug::inter_data::DATA.with_borrow_mut(|data| {
+                    data.gui = &mut ui_ret;
+                    unsafe {crate::plug::funcs::start(&mut *data);}
                 });
-                let _ = crate::plug::inter_data::DATA.with(
-                    |rdata| -> Result<(), Box<dyn std::error::Error>> {
-                        let data = rdata.borrow();
-                        println!("{}\texpected 6", idl::get_attr!(data.inner_spacing));
-                        println!("{}\texpected 8", idl::get_attr!(data.outter_spacing));
-                        println!("{}\texpected 2", idl::get_attr!(data.spacing_delta));
-                        crate::plug::funcs::start(Rc::clone(rdata));
-                        return Ok(());
-                    },
-                );
             });
             return app.run();
         },

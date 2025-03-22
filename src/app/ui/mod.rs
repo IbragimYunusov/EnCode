@@ -1,11 +1,17 @@
+use std::ffi::CStr;
+
 use gtk4::{
     prelude::*,
     gdk::Display,
     Application,
     ApplicationWindow,
+    Builder,
     IconTheme,
+    Widget,
 };
 use crate::app::func;
+use idl::get_attr;
+use crate::plug::inter_data::DATA as INTER_DATA;
 
 pub mod launcher;
 pub mod editor;
@@ -16,7 +22,7 @@ pub const OUTTER_SPACING: i32 = 8;
 pub const SPACING_DELTA: i32 = OUTTER_SPACING - INNER_SPACING;
 
 
-pub fn build_ui(app: &Application) -> idl::Gui
+pub fn build_ui(app: &Application) -> Builder
 {
     let name = if let Some(default_display) = Display::default() {
         let icon_theme = IconTheme::for_display(&default_display);
@@ -33,7 +39,14 @@ pub fn build_ui(app: &Application) -> idl::Gui
         super::AppType::LAUNCHER => launcher::build_ui(window),
         super::AppType::EDITOR(ref dir) => editor::build_ui(window, dir),
     };
-    ret.window().map(gtk4::ApplicationWindow::present);
+    ret
+        .object(&*INTER_DATA.with_borrow(
+            |d| unsafe{CStr::from_ptr(d.gui_ids.app_window_id).to_string_lossy()}
+        ))
+        .map(|w: Widget| w.downcast::<ApplicationWindow>().ok())
+        .flatten()
+        .as_ref()
+        .map(ApplicationWindow::present);
     return ret;
 }
 
