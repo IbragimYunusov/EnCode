@@ -174,93 +174,83 @@ fn build_notebook(
     );
     paned.set_end_child(Some(&notebook));
     paned.set_focus_child(Some(&notebook));
-    tree_view.selection().connect_changed(
-        clone!(
-            #[weak] notebook,
-            move |selection| {
-                if let Some((model, iter)) = selection.selected() {
-                    let path = model.path(&iter);
-                    let mut path_end = PathBuf::new();
-                    let mut indices = Vec::new();
-                    for index in path.indices() {
-                        indices.push(index);
-                        if let Some(iter) = model.iter(&TreePath::from_indices(&indices)) {
-                            let name: String = model.get::<String>(&iter, 0);
-                            path_end.push(name);
-                        }
-                    }
-                    if let Some(n) = (0..notebook.n_pages()).filter_map(
-                        |n| Some(
-                            notebook
-                                .tab_label(&notebook.nth_page(Some(n))?)?
-                                .downcast::<Box>()
-                                .ok()?
-                                .first_child()?
-                                .downcast::<Label>()
-                                .ok()?
-                                .label(),
-                        ),
-                    ).position(|s| s == &*path_end.to_string_lossy()) {
-                        notebook.set_current_page(Some(n as u32));
-                    } else {
-                        let file_path = dir.join(&path_end);
-                        if let Ok(content) = std::fs::read_to_string(&file_path) {
-                            build_tab(&notebook, content, path_end);
-                        }
+    tree_view.selection().connect_changed(clone!(
+        #[weak] notebook,
+        move |selection| {
+            if let Some((model, iter)) = selection.selected() {
+                let path = model.path(&iter);
+                let mut path_end = PathBuf::new();
+                let mut indices = Vec::new();
+                for index in path.indices() {
+                    indices.push(index);
+                    if let Some(iter) = model.iter(&TreePath::from_indices(&indices)) {
+                        let name: String = model.get::<String>(&iter, 0);
+                        path_end.push(name);
                     }
                 }
-            },
-        ),
-    );
+                if let Some(n) = (0..notebook.n_pages()).filter_map(
+                    |n| Some(
+                        notebook
+                            .tab_label(&notebook.nth_page(Some(n))?)?
+                            .downcast::<Box>()
+                            .ok()?
+                            .first_child()?
+                            .downcast::<Label>()
+                            .ok()?
+                            .label(),
+                    ),
+                ).position(|s| s == &*path_end.to_string_lossy()) {
+                    notebook.set_current_page(Some(n as u32));
+                } else {
+                    let file_path = dir.join(&path_end);
+                    if let Ok(content) = std::fs::read_to_string(&file_path) {
+                        build_tab(&notebook, content, path_end);
+                    }
+                }
+            }
+        },
+    ));
     return BuildNotebookRet{notebook};
 }
 
 
 fn build_tab(notebook: &Notebook, content: String, path_end: PathBuf)
 {
-    notebook.set_current_page(
-        Some(
-            {
-                let text_area = build_text_area(
-                    &Buffer::builder().text(content).build(),
-                    &*path_end.extension().unwrap_or_default().to_string_lossy(),
-                );
-                let tab_box = Box::builder()
-                    .orientation(Orientation::Horizontal)
-                    .spacing(super::INNER_SPACING)
-                    .build();
-                tab_box.append(
-                    &Label::builder()
-                        .label(&*path_end.to_string_lossy())
-                        .halign(gtk4::Align::End)
-                        .build(),
-                );
-                tab_box.append(
-                    &{
-                        let close_label = Label::new(Some("✕"));
-                        let gesture = GestureClick::new();
-                        gesture.connect_pressed(
-                            clone!(
-                                #[weak] notebook,
-                                move |_, _, _, _| {
-                                    notebook.remove_page(notebook.current_page());
-                                },
-                            )
-                        );
-                        close_label.add_controller(gesture);
-                        close_label
-                    },
-                );
-                let ret = notebook.append_page(
-                    &text_area,
-                    Some(&tab_box),
-                );
-                notebook.set_tab_detachable(&text_area, true);
-                notebook.set_tab_reorderable(&text_area, true);
-                ret
-            },
-        ),
-    );
+    notebook.set_current_page(Some({
+        let text_area = build_text_area(
+            &Buffer::builder().text(content).build(),
+            &*path_end.extension().unwrap_or_default().to_string_lossy(),
+        );
+        let tab_box = Box::builder()
+            .orientation(Orientation::Horizontal)
+            .spacing(super::INNER_SPACING)
+            .build();
+        tab_box.append(
+            &Label::builder()
+                .label(&*path_end.to_string_lossy())
+                .halign(gtk4::Align::End)
+                .build(),
+        );
+        tab_box.append(&{
+            let close_label = Label::new(Some("✕"));
+            let gesture = GestureClick::new();
+            gesture.connect_pressed(clone!(
+                #[weak] notebook,
+                move |_, _, _, _| {
+                    notebook.remove_page(notebook.current_page());
+                },
+            ));
+            close_label.add_controller(gesture);
+            close_label
+        });
+        let ret = notebook.append_page(
+            &text_area,
+            Some(&tab_box),
+        );
+        notebook.set_tab_detachable(&text_area, true);
+        notebook.set_tab_reorderable(&text_area, true);
+        ret
+    }));
 }
 
 

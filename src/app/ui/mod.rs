@@ -10,7 +10,6 @@ use gtk4::{
     Widget,
 };
 use crate::app::func;
-use idl::get_attr;
 use crate::plug::inter_data::DATA as INTER_DATA;
 
 pub mod launcher;
@@ -39,14 +38,6 @@ pub fn build_ui(app: &Application) -> Builder
         super::AppType::LAUNCHER => launcher::build_ui(window),
         super::AppType::EDITOR(ref dir) => editor::build_ui(window, dir),
     };
-    ret
-        .object(&*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.app_window_id).to_string_lossy()}
-        ))
-        .map(|w: Widget| w.downcast::<ApplicationWindow>().ok())
-        .flatten()
-        .as_ref()
-        .map(ApplicationWindow::present);
     return ret;
 }
 

@@ -1,8 +1,7 @@
 use std::cell::RefCell;
 use std::os::raw::c_char;
+use std::ptr::null_mut;
 
-
-pub const VERSION: &str = "0.0.0";
 
 thread_local! {
     pub static DATA: RefCell<idl::InterData> = RefCell::new(idl::InterData {
@@ -17,8 +16,9 @@ thread_local! {
             tree_view_scrolled_window_id: b"encode.tree_view_scrolled_window_id\0".as_ptr() as *const c_char,
             notebook_id: b"encode.notebook\0".as_ptr() as *const c_char,
         },
-        gui: std::ptr::null_mut(),
+        gui: null_mut(),
         app_id: crate::app::APP_ID.as_ptr() as *const c_char,
+        app: null_mut(),
         inner_spacing: crate::app::ui::INNER_SPACING,
         outter_spacing: crate::app::ui::OUTTER_SPACING,
         spacing_delta: crate::app::ui::SPACING_DELTA,

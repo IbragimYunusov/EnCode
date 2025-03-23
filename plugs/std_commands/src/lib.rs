@@ -1,40 +1,48 @@
-use std::fs;
-use gtk4::prelude::*;
+use std::ffi::c_char;
+use std::ptr::null;
 
+use std::fs;
+
+use gtk4::prelude::*;
+use gtk4::glib::object::Cast;
+
+use idl::{get_gui_el, get_attr};
 type Res<T> = Result<T, Box<dyn std::error::Error>>;
 
-use gtk4::glib::object::Cast;
-use idl::get_attr;
 
-
-/*
 #[no_mangle]
-pub extern "C" fn save_cur_file(data: idl::Data) -> Res<()>
+pub extern "C" fn save_cur_file(data: idl::Data) -> *const c_char
 {
-    let notebook = get_attr!(data.gui.as_ref.notebook);
-    let cur_page = &notebook
-        .nth_page(Some(get_attr!(notebook.current_page)))
-        .ok_or("Не удалось получить содержимое текущей открытой вкладки")?;
-    let hbox = cur_page.downcast_ref::<gtk4::Box>();
-    let view = get_attr!(hbox.as_ref.first_child).downcast::<sourceview5::View>();
-    let buf = get_attr!(view.ok).buffer();
-    if !buf.is_modified() {
+    if let Err(e) = (|| -> Res<()> {
+        let notebook: gtk4::Notebook = get_attr!(
+            [get_gui_el!(data.gui, data.gui_ids.notebook_id)]?
+        );
+        let cur_page = notebook
+            .nth_page(notebook.current_page())
+            .ok_or("Не удалось получить содержимое текущей открытой вкладки")?;
+        let hbox = get_attr!(cur_page.downcast_ref::<gtk4::Box>());
+        let view = get_attr!(hbox.first_child());
+        let view = get_attr!(view.downcast_ref::<sourceview5::View>());
+        let buf = view.buffer();
+        if !buf.is_modified() {
+            return Ok(());
+        }
+        let cur_tab_label = notebook
+            .tab_label(&cur_page)
+            .ok_or("Не удалось получить название текущей открытой вкладки")?
+            .downcast::<gtk4::Box>();
+        let cur_tab_label = get_attr!(cur_tab_label.ok().first_child())
+            .downcast::<gtk4::Label>();
+        let cur_tab_label = get_attr!(cur_tab_label.ok()).label();
+        let file = std::env::current_dir()?.join(&cur_tab_label);
+        fs::write(&file, buf.text(&buf.start_iter(), &buf.end_iter(), true))?;
+        buf.set_modified(true);
         return Ok(());
-    }
-    let cur_tab_label = notebook
-        .tab_label(cur_page)
-        .ok_or("Не удалось получить название текущей открытой вкладки")?
-        .downcast::<gtk4::Box>();
-    let cur_tab_label = get_attr!(cur_tab_label.ok.first_child)
-        .downcast::<gtk4::Label>();
-    let cur_tab_label = get_attr!(cur_tab_label.ok).label();
-    let file = std::env::current_dir()?.join(&cur_tab_label);
-    fs::write(&file, buf.text(&buf.start_iter(), &buf.end_iter(), true))?;
-    buf.set_modified(true);
-    return Ok(());
+    })() {e.to_string().as_ptr() as *const c_char} else {null()}
 }
 
 
+/*
 #[no_mangle]
 pub extern "C" fn save_all_files(data: idl::Data) -> Res<()>
 {

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::env;
-
+use std::ffi::CStr;
 use std::rc::Rc;
 use std::cell::RefCell;
 use lazy_static::lazy_static;
@@ -12,6 +12,8 @@ use gio::ApplicationFlags;
 
 pub mod ui;
 pub mod func;
+
+use crate::plug::inter_data::DATA as INTER_DATA;
 
 
 pub enum AppType {
@@ -51,18 +53,25 @@ thread_local!
 
 
 pub fn main() -> ExitCode {
-    return APP.with(
-        |data| {
-            let app = data.borrow();
-            app.connect_activate(|app| {ui::build_ui(app);});
-            app.connect_open(|application, _, _| {
-                let mut ui_ret = ui::build_ui(application);
-                crate::plug::inter_data::DATA.with_borrow_mut(|data| {
-                    data.gui = &mut ui_ret;
-                    unsafe {crate::plug::funcs::start(&mut *data);}
-                });
+    return APP.with(move |data| {
+        let app = data.borrow();
+        app.connect_activate(|app| {ui::build_ui(app);});
+        app.connect_open(|application, _, _| {
+            let mut ui_ret = ui::build_ui(application);
+            INTER_DATA.with_borrow_mut(|data| {
+                data.gui = &mut ui_ret;
+                data.app = &mut application.clone();
+                unsafe {crate::plug::funcs::before_showing_window(&mut *data);}
+                ui_ret
+                    .object::<gtk4::ApplicationWindow>(
+                        &*unsafe{
+                            CStr::from_ptr(data.gui_ids.app_window_id)
+                                .to_string_lossy()
+                        },
+                    ).as_ref().map(gtk4::ApplicationWindow::present);
+                unsafe {crate::plug::funcs::start(&mut *data);}
             });
-            return app.run();
-        },
-    );
+        });
+        return app.run();
+    });
 }

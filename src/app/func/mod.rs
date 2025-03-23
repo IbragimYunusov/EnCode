@@ -35,16 +35,14 @@ pub fn get_name_and_path_for_color_scheme() -> Result<(String, PathBuf), Box<dyn
             "Не удалось получить директорию текущего исполняемого файла",
         ),
     )?;
-    return Ok(
-        (
-            if is_current_theme_dark() {
-                "encode-dark".to_string()
-            } else {
-                "Adwaita".to_string()
-            },
-            dir.join("static").join("color_schemes"),
-        ),
-    );
+    return Ok((
+        if is_current_theme_dark() {
+            "encode-dark".to_string()
+        } else {
+            "Adwaita".to_string()
+        },
+        dir.join("static").join("color_schemes"),
+    ));
 }
 
 

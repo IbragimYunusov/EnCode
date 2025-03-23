@@ -289,58 +289,52 @@ pub mod new_project
         vbox.append(&button_box);
         dialog.set_child(Some(&vbox));
 
-        if connect_response {
-            dialog.connect_response(
-                clone!(
-                    #[weak] parent,
-                    #[weak] use_env_checkbutton,
-                    #[weak] name_entry,
-                    #[weak] directory_entry,
-                    #[weak] env_dir_entry,
-                    move |dialog, response| {
-                        if response == ResponseType::Accept {
-                            if let Err(e) = super::f_launcher::new_project(
-                                Ret {
-                                    name: name_entry.text().to_string(),
-                                    directory: directory_entry.text().to_string(),
-                                    use_env: use_env_checkbutton.is_active(),
-                                    env_dir: env_dir_entry.text().to_string(),
-                                },
-                                true,
-                            ) {
-                                super::super::show_error_dialog(&parent, e);
-                            } else {
-                                dialog.close();
-                                parent.destroy();
-                            }
-                        } else {
-                            dialog.close();
-                        }
-                    },
-                ),
-            );
-        }
-        dialog.show();
-        return Ok(
-            Np{
-                dialog,
-                vbox,
-                name_box,
-                name_label,
-                name_entry,
-                directory_box,
-                directory_label,
-                directory_entry,
-                directory_button,
-                use_env_checkbutton,
-                env_dir_box,
-                env_dir_label,
-                env_dir_entry,
-                button_box,
-                cancel_button,
-                ok_button,
+        if connect_response {dialog.connect_response(clone!(
+            #[weak] parent,
+            #[weak] use_env_checkbutton,
+            #[weak] name_entry,
+            #[weak] directory_entry,
+            #[weak] env_dir_entry,
+            move |dialog, response| {
+                if response == ResponseType::Accept {
+                    if let Err(e) = super::f_launcher::new_project(
+                        Ret {
+                            name: name_entry.text().to_string(),
+                            directory: directory_entry.text().to_string(),
+                            use_env: use_env_checkbutton.is_active(),
+                            env_dir: env_dir_entry.text().to_string(),
+                        },
+                        true,
+                    ) {
+                        super::super::show_error_dialog(&parent, e);
+                    } else {
+                        dialog.close();
+                        parent.destroy();
+                    }
+                } else {
+                    dialog.close();
+                }
             },
-        );
+        ));}
+        dialog.show();
+        return Ok(Np{
+            dialog,
+            vbox,
+            name_box,
+            name_label,
+            name_entry,
+            directory_box,
+            directory_label,
+            directory_entry,
+            directory_button,
+            use_env_checkbutton,
+            env_dir_box,
+            env_dir_label,
+            env_dir_entry,
+            button_box,
+            cancel_button,
+            ok_button,
+        });
     }
 
     fn directory_choose(parent: &ApplicationWindow, directory_entry: &Entry)
@@ -466,178 +460,161 @@ pub mod open_project
             .label("🗑️")
             .sensitive(false)
             .build();
-        delete_button.connect_clicked(
-            clone!(
-                #[weak] parent,
-                #[weak] list_box,
-                move |_| {
-                    if let Some(row) = list_box.selected_row() {
-                        let id = if let Some(box_child) = row.child() {
-                            if let Some(box_) = box_child.downcast_ref::<Box>() {
-                                if let Some(lbl_child) = box_.first_child(){
-                                    if let Some(lbl) = lbl_child.downcast_ref::<Label>() {
-                                        lbl.text().parse::<i32>()
-                                    } else {return}
-                                } else {return}
+        delete_button.connect_clicked(clone!(
+            #[weak] parent,
+            #[weak] list_box,
+            move |_| {if let Some(row) = list_box.selected_row() {
+                let id = if let Some(box_child) = row.child() {
+                    if let Some(box_) = box_child.downcast_ref::<Box>() {
+                        if let Some(lbl_child) = box_.first_child(){
+                            if let Some(lbl) = lbl_child.downcast_ref::<Label>() {
+                                lbl.text().parse::<i32>()
                             } else {return}
-                        } else {return};
-                        if let Err(e) = id {
-                            super::super::show_error_dialog(&parent, e);
-                            return;
-                        }
-                        let id = id.unwrap();
-                        let project = crate::sql::general_data::Project::get(id);
-                        if let Err(e) = project {
-                            super::super::show_error_dialog(&parent, e);
-                            return;
-                        }
-                        let project = project.unwrap();
-                        if let Err(e) = std::fs::remove_dir(
-                            &*std::path::PathBuf::from(&project.dir).join(&project.dev_name),
-                        ) {
-                            super::super::show_error_dialog(&parent, e);
-                            return;
-                        }
-                        if let Err(e) = project.remove() {
-                            super::super::show_error_dialog(&parent, e);
-                            return;
-                        }
-                        list_box.remove(&row);
-                    }
-                },
-            ),
-        );
+                        } else {return}
+                    } else {return}
+                } else {return};
+                if let Err(e) = id {
+                    super::super::show_error_dialog(&parent, e);
+                    return;
+                }
+                let id = id.unwrap();
+                let project = crate::sql::general_data::Project::get(id);
+                if let Err(e) = project {
+                    super::super::show_error_dialog(&parent, e);
+                    return;
+                }
+                let project = project.unwrap();
+                if let Err(e) = std::fs::remove_dir(
+                    &*std::path::PathBuf::from(&project.dir).join(&project.dev_name),
+                ) {
+                    super::super::show_error_dialog(&parent, e);
+                    return;
+                }
+                if let Err(e) = project.remove() {
+                    super::super::show_error_dialog(&parent, e);
+                    return;
+                }
+                list_box.remove(&row);
+            }},
+        ));
 
         let new_button = Button::builder()
             .label("➕")
             .build();
-        new_button.connect_clicked(
-            clone!(
-                #[weak] parent,
-                #[weak] list_box,
-                move |_| {
-                    if let Ok(np) = super::new_project::f(&parent, false) {
-                        np.dialog.connect_response(
-                            clone!(
-                                #[weak(rename_to=name_entry)] np.name_entry,
-                                #[weak(rename_to=directory_entry)] np.directory_entry,
-                                #[weak(rename_to=use_env_checkbutton)] np.use_env_checkbutton,
-                                #[weak(rename_to=env_dir_entry)] np.env_dir_entry,
-                                move |np_dialog, response| {
-                                    if response != ResponseType::Accept {
-                                        np_dialog.close();
-                                        return;
-                                    }
-                                    let ret = super::new_project::Ret{
-                                        name: name_entry.text().to_string(),
-                                        directory: directory_entry.text().to_string(),
-                                        use_env: use_env_checkbutton.is_active(),
-                                        env_dir: env_dir_entry.text().to_string(),
-                                    };
-                                    let name = ret.name.clone();
-                                    let directory = ret.directory.clone();
-                                    if let Err(e) = crate::app::func::launcher::new_project(ret, false) {
+        new_button.connect_clicked(clone!(
+            #[weak] parent,
+            #[weak] list_box,
+            move |_| {if let Ok(np) = super::new_project::f(&parent, false) {
+                np.dialog.connect_response(clone!(
+                    #[weak(rename_to=name_entry)] np.name_entry,
+                    #[weak(rename_to=directory_entry)] np.directory_entry,
+                    #[weak(rename_to=use_env_checkbutton)] np.use_env_checkbutton,
+                    #[weak(rename_to=env_dir_entry)] np.env_dir_entry,
+                    move |np_dialog, response| {
+                        if response != ResponseType::Accept {
+                            np_dialog.close();
+                            return;
+                        }
+                        let ret = super::new_project::Ret{
+                            name: name_entry.text().to_string(),
+                            directory: directory_entry.text().to_string(),
+                            use_env: use_env_checkbutton.is_active(),
+                            env_dir: env_dir_entry.text().to_string(),
+                        };
+                        let name = ret.name.clone();
+                        let directory = ret.directory.clone();
+                        if let Err(e) = crate::app::func::launcher::new_project(ret, false) {
+                            super::super::show_error_dialog(&parent, e);
+                            return;
+                        }
+                        list_box.insert(
+                            &new_row(&crate::sql::general_data::Project{
+                                id: match crate::sql::general_data::Project::get_max_id() {
+                                    Ok(id) => id + 1,
+                                    Err(e) => {
                                         super::super::show_error_dialog(&parent, e);
                                         return;
-                                    }
-                                    list_box.insert(
-                                        &new_row(
-                                            &crate::sql::general_data::Project{
-                                                id: match crate::sql::general_data::Project::get_max_id() {
-                                                    Ok(id) => id + 1,
-                                                    Err(e) => {
-                                                        super::super::show_error_dialog(&parent, e);
-                                                        return;
-                                                    },
-                                                },
-                                                dev_name: name,
-                                                dir: directory,
-                                            },
-                                        ),
-                                        0,
-                                    );
-                                    np_dialog.close();
+                                    },
                                 },
-                            )
+                                dev_name: name,
+                                dir: directory,
+                            }),
+                            0,
                         );
-                    }
-                },
-            ),
-        );
+                        np_dialog.close();
+                    },
+                ));
+            }},
+        ));
 
         let from_dir_button = Button::builder()
             .margin_start(super::super::SPACING_DELTA)
             .label("📂")
             .build();
-        from_dir_button.connect_clicked(
-            clone!(
-                #[weak] parent,
-                #[weak] list_box,
-                move |_| {
-                    let file_chooser = FileChooserDialog::builder()
-                        .title("Выбрать Директорию")
-                        .action(FileChooserAction::SelectFolder)
-                        .transient_for(&parent)
-                        .modal(true)
-                        .build();
+        from_dir_button.connect_clicked(clone!(
+            #[weak] parent,
+            #[weak] list_box,
+            move |_| {
+                let file_chooser = FileChooserDialog::builder()
+                    .title("Выбрать Директорию")
+                    .action(FileChooserAction::SelectFolder)
+                    .transient_for(&parent)
+                    .modal(true)
+                    .build();
 
-                    file_chooser.add_buttons(
-                        &[
-                            ("Отмена", ResponseType::Cancel),
-                            ("Выбрать", ResponseType::Accept),
-                        ],
-                    );
+                file_chooser.add_buttons(
+                    &[
+                        ("Отмена", ResponseType::Cancel),
+                        ("Выбрать", ResponseType::Accept),
+                    ],
+                );
 
-                    file_chooser.connect_response(
-                        clone!(
-                            #[weak] parent,
-                            move |dialog, response| {
-                                if response == ResponseType::Accept {
-                                    if let Some(file) = dialog.file() {
-                                        if let Some(path) = file.path() {
-                                            let project = crate::sql::general_data::Project{
-                                                id: crate::sql::general_data::Project::get_max_id().unwrap_or(0) + 1,
-                                                dir: if let Some(grand_dir) = path.parent() {
-                                                    grand_dir.to_string_lossy().to_string()
-                                                } else {
-                                                    super::super::show_error_dialog(
-                                                        &parent,
-                                                        "Не удалось получить родительскую директорию",
-                                                    );
-                                                    dialog.close();
-                                                    return;
-                                                },
-                                                dev_name: if let Some(name) = path.file_name() {
-                                                    name.to_string_lossy().to_string()
-                                                } else {
-                                                    super::super::show_error_dialog(
-                                                        &parent,
-                                                        "Не удалось получить саму директорию",
-                                                    );
-                                                    dialog.close();
-                                                    return;
-                                                },
-                                            };
-                                            if let Err(e) = project.insert() {
-                                                super::super::show_error_dialog(&parent, e);
-                                                dialog.close();
-                                                return;
-                                            };
-                                            let row = new_row(&project);
-                                            list_box.insert(&row, 0);
-                                            list_box.select_row(Some(&row));
-                                        }
-                                    }
+                file_chooser.connect_response(clone!(
+                    #[weak] parent,
+                    move |dialog, response| {
+                        if response == ResponseType::Accept {
+                            if let Some(file) = dialog.file() {
+                                if let Some(path) = file.path() {
+                                    let project = crate::sql::general_data::Project{
+                                        id: crate::sql::general_data::Project::get_max_id().unwrap_or(0) + 1,
+                                        dir: if let Some(grand_dir) = path.parent() {
+                                            grand_dir.to_string_lossy().to_string()
+                                        } else {
+                                            super::super::show_error_dialog(
+                                                &parent,
+                                                "Не удалось получить родительскую директорию",
+                                            );
+                                            dialog.close();
+                                            return;
+                                        },
+                                        dev_name: if let Some(name) = path.file_name() {
+                                            name.to_string_lossy().to_string()
+                                        } else {
+                                            super::super::show_error_dialog(
+                                                &parent,
+                                                "Не удалось получить саму директорию",
+                                            );
+                                            dialog.close();
+                                            return;
+                                        },
+                                    };
+                                    if let Err(e) = project.insert() {
+                                        super::super::show_error_dialog(&parent, e);
+                                        dialog.close();
+                                        return;
+                                    };
+                                    let row = new_row(&project);
+                                    list_box.insert(&row, 0);
+                                    list_box.select_row(Some(&row));
                                 }
-                                dialog.close();
-                            },
-                        ),
-                    );
-
-                    file_chooser.show();
-                },
-            )
-        );
+                            }
+                        }
+                        dialog.close();
+                    },
+                ));
+                file_chooser.show();
+            },
+        ));
 
         list_box.connect_row_activated(
             clone!(
@@ -661,50 +638,46 @@ pub mod open_project
         vbox.append(&buttons_box);
         dialog.set_child(Some(&vbox));
 
-        if connect_response {
-            dialog.connect_response(
-                clone!(
-                    #[weak] parent,
-                    #[weak] list_box,
-                    move |dialog, response| {
-                        if response == ResponseType::Accept {
-                            if let Err(e) = super::f_launcher::open_project(
-                                {
-                                    let id = if let Some(row) = list_box.selected_row() {
-                                        if let Some(box_child) = row.child() {
-                                            if let Some(box_) = box_child.downcast_ref::<Box>() {
-                                                if let Some(lbl_child) = box_.first_child(){
-                                                    if let Some(lbl) = lbl_child.downcast_ref::<Label>() {
-                                                        lbl.text().parse::<i32>()
-                                                    } else {return}
-                                                } else {return}
+        if connect_response {dialog.connect_response(clone!(
+            #[weak] parent,
+            #[weak] list_box,
+            move |dialog, response| {
+                if response == ResponseType::Accept {
+                    if let Err(e) = super::f_launcher::open_project(
+                        {
+                            let id = if let Some(row) = list_box.selected_row() {
+                                if let Some(box_child) = row.child() {
+                                    if let Some(box_) = box_child.downcast_ref::<Box>() {
+                                        if let Some(lbl_child) = box_.first_child(){
+                                            if let Some(lbl) = lbl_child.downcast_ref::<Label>() {
+                                                lbl.text().parse::<i32>()
                                             } else {return}
                                         } else {return}
-                                    } else {return};
-                                    if let Err(e) = id {
-                                        super::super::show_error_dialog(&parent, e);
-                                        return;
-                                    }
-                                    let id = id.unwrap();
-                                    let r = crate::sql::general_data::Project::get(id);
-                                    if let Err(e) = r {
-                                        super::super::show_error_dialog(&parent, e);
-                                        return;
-                                    } else {r.unwrap()}
-                                }
-                            ) {
+                                    } else {return}
+                                } else {return}
+                            } else {return};
+                            if let Err(e) = id {
                                 super::super::show_error_dialog(&parent, e);
-                            } else {
-                                dialog.close();
-                                parent.destroy();
+                                return;
                             }
-                        } else {
-                            dialog.close();
+                            let id = id.unwrap();
+                            let r = crate::sql::general_data::Project::get(id);
+                            if let Err(e) = r {
+                                super::super::show_error_dialog(&parent, e);
+                                return;
+                            } else {r.unwrap()}
                         }
-                    },
-                ),
-            );
-        }
+                    ) {
+                        super::super::show_error_dialog(&parent, e);
+                    } else {
+                        dialog.close();
+                        parent.destroy();
+                    }
+                } else {
+                    dialog.close();
+                }
+            },
+        ));}
         dialog.show();
         return Ok(dialog);
     }
@@ -818,42 +791,40 @@ pub mod plugin_settings
         cancel_button.unparent();
         let ok_button = dialog.add_button("Сохранить", ResponseType::Accept);
         ok_button.unparent();
-        dialog.connect_response(
-            clone!(
-                #[weak] vbox_scrolled,
-                #[weak] parent,
-                move |dialog, response| {
-                    if response == ResponseType::Accept {
-                        let selected_dev_names: Vec<GString> = vbox_scrolled.observe_children()
-                            .into_iter()
-                            .filter_map(|c| c.ok()?.downcast_ref::<CheckButton>().and_then(CheckButton::label))
-                            .collect();
-                        if let Err(e) = super::f_launcher::dependencies_check(
-                            selected_dev_names.iter().map(GString::as_str).collect::<Vec<&str>>(),
-                        ) {
-                            super::super::show_error_dialog(&parent, e);
-                            return;
-                        }
-                        for child in vbox_scrolled.observe_children().into_iter() {
-                            match child {
-                                Ok(c) => if let Some(check_button) = c.downcast_ref::<CheckButton>() {
-                                    if let Some(dev_name) = check_button.label() {
-                                        if let Err(e) = crate::sql::general_data::Plugin::set_will_be_used_from_dev_name(
-                                            dev_name,
-                                            check_button.is_active(),
-                                        ) {
-                                            super::super::show_error_dialog(&parent, e);
-                                        }
+        dialog.connect_response(clone!(
+            #[weak] vbox_scrolled,
+            #[weak] parent,
+            move |dialog, response| {
+                if response == ResponseType::Accept {
+                    let selected_dev_names: Vec<GString> = vbox_scrolled.observe_children()
+                        .into_iter()
+                        .filter_map(|c| c.ok()?.downcast_ref::<CheckButton>().and_then(CheckButton::label))
+                        .collect();
+                    if let Err(e) = super::f_launcher::dependencies_check(
+                        selected_dev_names.iter().map(GString::as_str).collect::<Vec<&str>>(),
+                    ) {
+                        super::super::show_error_dialog(&parent, e);
+                        return;
+                    }
+                    for child in vbox_scrolled.observe_children().into_iter() {
+                        match child {
+                            Ok(c) => if let Some(check_button) = c.downcast_ref::<CheckButton>() {
+                                if let Some(dev_name) = check_button.label() {
+                                    if let Err(e) = crate::sql::general_data::Plugin::set_will_be_used_from_dev_name(
+                                        dev_name,
+                                        check_button.is_active(),
+                                    ) {
+                                        super::super::show_error_dialog(&parent, e);
                                     }
-                                },
-                                Err(e) => super::super::show_error_dialog(&parent, e),
-                            }
+                                }
+                            },
+                            Err(e) => super::super::show_error_dialog(&parent, e),
                         }
                     }
-                    dialog.close();
-                },
-            ),
-        );
+                }
+                dialog.close();
+            },
+        ));
 
         buttons_box.append(&cancel_button);
         buttons_box.append(&ok_button);
