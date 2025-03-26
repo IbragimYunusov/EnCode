@@ -734,6 +734,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "std_shortcuts"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "inter_data_lib",
+ "sourceview5",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.100"
 source = "registry+https://github.com/rust-lang/crates.io-index"

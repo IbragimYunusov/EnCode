@@ -60,10 +60,8 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
     Box::new(|| -> idl::Res<()> {
         unsafe{gtk4::set_initialized();}
         let menu = get_attr!([create_menu()].ok());
+        get_gui_el!(data.gui.window).set_show_menubar(true);
         unsafe{(*data).app.as_ref().map(|app| app.set_menubar(Some(&menu)));}
-        let vbox = get_gui_el!(data.gui.vbox);
-        vbox.prepend(&gtk4::PopoverMenuBar::from_model(Some(&menu)));
-        println!("ok {}", unsafe{(*data).inner_spacing});
         return Ok(());
     }().err().map(|e| e.to_string()))
 }

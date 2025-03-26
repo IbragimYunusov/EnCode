@@ -238,6 +238,9 @@ pub extern "C" fn new_file(data: idl::Data) -> idl::Ret
                         .join(name_entry.text());
                     std::fs::File::create(path)?;
                     dialog.close();
+                    if let Some(e) = *update_tree_view(data) {
+                        Err(std::io::Error::other(e))?
+                    }
                 }
                 return Ok(());
             }() {let _ = || -> idl::Res<()> {
@@ -336,6 +339,9 @@ pub extern "C" fn new_dir(data: idl::Data) -> idl::Ret
                         .join(name_entry.text());
                     std::fs::create_dir(path)?;
                     dialog.close();
+                    if let Some(e) = *update_tree_view(data) {
+                        Err(std::io::Error::other(e))?
+                    }
                 }
                 return Ok(());
             }() {let _ = || -> idl::Res<()> {
@@ -346,5 +352,34 @@ pub extern "C" fn new_dir(data: idl::Data) -> idl::Ret
         dialog.set_child(Some(&vbox));
         dialog.present();
         return Ok(());
+    }().err().map(|e| e.to_string()))
+}
+
+
+pub extern "C" fn update_tree_view(data: idl::Data) -> idl::Ret
+{
+    fn load_dir(
+        store: &gtk4::TreeStore,
+        parent: Option<gtk4::TreeIter>,
+        path: &std::path::Path,
+    ) -> idl::Res<()> {
+        for entry in std::fs::read_dir(path)?.filter_map(Result::ok) {
+            let name = entry.file_name().into_string().unwrap_or_default();
+            let iter = store.append(parent.as_ref());
+            store.set_value(&iter, 0, &name.to_value());
+
+            if entry.file_type().map_or(false, |ft| ft.is_dir()) {
+                load_dir(store, Some(iter), &entry.path())?;
+            }
+        }
+        return Ok(());
+    }
+    Box::new(|| -> idl::Res<()> {
+        get_gui_el!(data.gui.store).clear();
+        load_dir(
+            get_gui_el!(data.gui.store),
+            None,
+            std::env::current_dir()?.as_path(),
+        )
     }().err().map(|e| e.to_string()))
 }
