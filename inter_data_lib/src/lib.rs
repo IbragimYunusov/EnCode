@@ -2,6 +2,7 @@ use std::os::raw::c_char;
 
 
 pub type Data = *mut InterData;
+pub type Ret = Box<Option<String>>;
 
 
 #[macro_export]
@@ -67,8 +68,7 @@ macro_rules! get_attr {
     ) => {
         $crate::get_attr!(
             [$obj]$(.$attr$(::<$($generic),*>)?($($params),*))*
-        ).ok_or(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        ).ok_or(std::io::Error::other(
             format!("Выражение {} или его атрибут — None", stringify!($obj)),
         ))?
     };
@@ -77,10 +77,8 @@ macro_rules! get_attr {
 
 #[macro_export]
 macro_rules! get_gui_el {
-    ($id1:ident$(.$attr1:ident)*, $id2:ident$(.$attr2:ident)*$(, $type:ty)?$(,)?) => {
-        unsafe{(*(*$id1)$(.$attr1)*).object$(::<$type>)?(&*unsafe{
-            std::ffi::CStr::from_ptr((*$id2)$(.$attr2)*).to_string_lossy()
-        })}
+    ($id1:ident.$gui:ident.$el:ident) => {
+        unsafe{&$crate::get_attr!([(*$id1).$gui.as_ref()]?).$el}
     };
 }
 
@@ -94,26 +92,43 @@ macro_rules! get_str {
 
 
 #[repr(C)]
-pub struct GuiIds {
-    pub app_window_id: *const c_char,
-    pub paned_id: *const c_char,
-    pub tree_view_id: *const c_char,
-    pub store_id: *const c_char,
-    pub column_id: *const c_char,
-    pub renderer_id: *const c_char,
-    pub tree_view_scrolled_window_id: *const c_char,
-    pub notebook_id: *const c_char,
+pub struct Gui {
+    pub window: gtk4::ApplicationWindow,
+    pub vbox: gtk4::Box,
+    pub paned: gtk4::Paned,
+    pub tree_view: gtk4::TreeView,
+    pub store: gtk4::TreeStore,
+    pub column: gtk4::TreeViewColumn,
+    pub renderer: gtk4::CellRendererText,
+    pub tree_view_scrolled_window: gtk4::ScrolledWindow,
+    pub notebook: gtk4::Notebook,
 }
 
 
 #[repr(C)]
 pub struct InterData {
     pub version: *const c_char,
-    pub gui_ids: GuiIds,
-    pub gui: *mut gtk4::Builder,
-    pub app_id: *const c_char,
-    pub app: *mut gtk4::Application,
+    pub gui: Option<Gui>,
+    pub app: Option<gtk4::Application>,
     pub inner_spacing: i32,
     pub outter_spacing: i32,
     pub spacing_delta: i32,
+}
+
+
+pub fn show_error_dialog(
+    parent: &gtk4::ApplicationWindow,
+    err: impl std::string::ToString,
+) {
+    use gtk4::prelude::*;
+    let dialog = gtk4::MessageDialog::new(
+        Some(parent),
+        gtk4::DialogFlags::MODAL,
+        gtk4::MessageType::Error,
+        gtk4::ButtonsType::Ok,
+        format!("Ошибка: {}", err.to_string()),
+    );
+    dialog.set_title(Some("Ошибка"));
+    dialog.connect_response(|dialog, _| dialog.destroy());
+    dialog.show();
 }

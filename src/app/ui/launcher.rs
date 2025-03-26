@@ -3,31 +3,19 @@ use gtk4::{
     Align,
     ApplicationWindow,
     Box,
-    Builder,
     Button,
     Orientation,
 };
 use glib::clone;
 
-use std::ffi::CStr;
-
 use crate::app::func::launcher as f_launcher;
-use super::show_error_dialog;
-use crate::plug::inter_data::DATA as INTER_DATA;
 
 
-pub fn build_ui(window: ApplicationWindow) -> Builder
+pub fn build_ui(window: ApplicationWindow) -> ApplicationWindow
 {
-    let builder = Builder::new();
     window.set_title(Some("EnCode — Лаунчер"));
-    window.set_default_width(800);
-    window.set_default_height(500);
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.app_window_id).to_string_lossy()},
-        ),
-        &window,
-    );
+    window.set_default_width(1000);
+    window.set_default_height(600);
     let vbox = Box::builder()
         .orientation(Orientation::Vertical)
         .spacing(super::INNER_SPACING)
@@ -39,7 +27,7 @@ pub fn build_ui(window: ApplicationWindow) -> Builder
     create_image(&window, &vbox);
     create_buttons(&window, &vbox);
     window.set_child(Some(&vbox));
-    return builder;
+    return window;
 }
 
 
@@ -64,7 +52,7 @@ fn create_image(window: &ApplicationWindow, vbox: &Box)
             image_box.append(&spacer_bottom);
             vbox.append(&image_box);
         },
-        Err(e) => show_error_dialog(&window, e),
+        Err(e) => idl::show_error_dialog(&window, e),
     }
 }
 
@@ -211,7 +199,7 @@ pub mod new_project
                 let default_dir = grand_default_dir.join("projects");
                 if !default_dir.exists() {
                     if let Err(e) = fs::create_dir(&default_dir) {
-                        super::super::show_error_dialog(&parent, e);
+                        idl::show_error_dialog(&parent, e);
                     } else {
                         directory_entry.set_text(&*default_dir.to_string_lossy());
                     }
@@ -306,7 +294,7 @@ pub mod new_project
                         },
                         true,
                     ) {
-                        super::super::show_error_dialog(&parent, e);
+                        idl::show_error_dialog(&parent, e);
                     } else {
                         dialog.close();
                         parent.destroy();
@@ -399,7 +387,7 @@ pub mod open_project
     {
         let projects = crate::sql::general_data::Project::select_all();
         if let Err(e) = projects {
-            super::super::show_error_dialog(&parent, &e);
+            idl::show_error_dialog(&parent, &e);
             return Err(Box_::new(e));
         }
 
@@ -423,12 +411,12 @@ pub mod open_project
 
         for project in projects.unwrap().iter().rev() {
             if let Err(e) = project {
-                super::super::show_error_dialog(&parent, e);
+                idl::show_error_dialog(&parent, e);
                 continue;
             }
             match project.as_ref() {
                 Ok(ref proj) => list_box.append(&new_row(proj)),
-                Err(e) => super::super::show_error_dialog(&parent, e),
+                Err(e) => idl::show_error_dialog(&parent, e),
             }
         }
 
@@ -474,24 +462,24 @@ pub mod open_project
                     } else {return}
                 } else {return};
                 if let Err(e) = id {
-                    super::super::show_error_dialog(&parent, e);
+                    idl::show_error_dialog(&parent, e);
                     return;
                 }
                 let id = id.unwrap();
                 let project = crate::sql::general_data::Project::get(id);
                 if let Err(e) = project {
-                    super::super::show_error_dialog(&parent, e);
+                    idl::show_error_dialog(&parent, e);
                     return;
                 }
                 let project = project.unwrap();
                 if let Err(e) = std::fs::remove_dir(
                     &*std::path::PathBuf::from(&project.dir).join(&project.dev_name),
                 ) {
-                    super::super::show_error_dialog(&parent, e);
+                    idl::show_error_dialog(&parent, e);
                     return;
                 }
                 if let Err(e) = project.remove() {
-                    super::super::show_error_dialog(&parent, e);
+                    idl::show_error_dialog(&parent, e);
                     return;
                 }
                 list_box.remove(&row);
@@ -524,7 +512,7 @@ pub mod open_project
                         let name = ret.name.clone();
                         let directory = ret.directory.clone();
                         if let Err(e) = crate::app::func::launcher::new_project(ret, false) {
-                            super::super::show_error_dialog(&parent, e);
+                            idl::show_error_dialog(&parent, e);
                             return;
                         }
                         list_box.insert(
@@ -532,7 +520,7 @@ pub mod open_project
                                 id: match crate::sql::general_data::Project::get_max_id() {
                                     Ok(id) => id + 1,
                                     Err(e) => {
-                                        super::super::show_error_dialog(&parent, e);
+                                        idl::show_error_dialog(&parent, e);
                                         return;
                                     },
                                 },
@@ -580,7 +568,7 @@ pub mod open_project
                                         dir: if let Some(grand_dir) = path.parent() {
                                             grand_dir.to_string_lossy().to_string()
                                         } else {
-                                            super::super::show_error_dialog(
+                                            idl::show_error_dialog(
                                                 &parent,
                                                 "Не удалось получить родительскую директорию",
                                             );
@@ -590,7 +578,7 @@ pub mod open_project
                                         dev_name: if let Some(name) = path.file_name() {
                                             name.to_string_lossy().to_string()
                                         } else {
-                                            super::super::show_error_dialog(
+                                            idl::show_error_dialog(
                                                 &parent,
                                                 "Не удалось получить саму директорию",
                                             );
@@ -599,7 +587,7 @@ pub mod open_project
                                         },
                                     };
                                     if let Err(e) = project.insert() {
-                                        super::super::show_error_dialog(&parent, e);
+                                        idl::show_error_dialog(&parent, e);
                                         dialog.close();
                                         return;
                                     };
@@ -657,18 +645,18 @@ pub mod open_project
                                 } else {return}
                             } else {return};
                             if let Err(e) = id {
-                                super::super::show_error_dialog(&parent, e);
+                                idl::show_error_dialog(&parent, e);
                                 return;
                             }
                             let id = id.unwrap();
                             let r = crate::sql::general_data::Project::get(id);
                             if let Err(e) = r {
-                                super::super::show_error_dialog(&parent, e);
+                                idl::show_error_dialog(&parent, e);
                                 return;
                             } else {r.unwrap()}
                         }
                     ) {
-                        super::super::show_error_dialog(&parent, e);
+                        idl::show_error_dialog(&parent, e);
                     } else {
                         dialog.close();
                         parent.destroy();
@@ -753,7 +741,7 @@ pub mod plugin_settings
 
         let plugins = crate::sql::general_data::Plugin::select_all();
         if let Err(e) = plugins {
-            super::super::show_error_dialog(&parent, e);
+            idl::show_error_dialog(&parent, e);
             return;
         }
         let plugins = plugins.unwrap();
@@ -772,7 +760,7 @@ pub mod plugin_settings
             }
         }
         if errs.len() != 0 {
-            super::super::show_error_dialog(
+            idl::show_error_dialog(
                 &parent,
                 errs.iter().map(|e| e.to_string()).collect::<Vec<String>>().join("\n"),
             );
@@ -803,7 +791,7 @@ pub mod plugin_settings
                     if let Err(e) = super::f_launcher::dependencies_check(
                         selected_dev_names.iter().map(GString::as_str).collect::<Vec<&str>>(),
                     ) {
-                        super::super::show_error_dialog(&parent, e);
+                        idl::show_error_dialog(&parent, e);
                         return;
                     }
                     for child in vbox_scrolled.observe_children().into_iter() {
@@ -814,11 +802,11 @@ pub mod plugin_settings
                                         dev_name,
                                         check_button.is_active(),
                                     ) {
-                                        super::super::show_error_dialog(&parent, e);
+                                        idl::show_error_dialog(&parent, e);
                                     }
                                 }
                             },
-                            Err(e) => super::super::show_error_dialog(&parent, e),
+                            Err(e) => idl::show_error_dialog(&parent, e),
                         }
                     }
                 }

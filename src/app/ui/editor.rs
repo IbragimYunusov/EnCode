@@ -2,7 +2,6 @@ use gtk4::{
     prelude::*,
     ApplicationWindow,
     Box,
-    Builder,
     CellRendererText,
     EventControllerKey,
     GestureClick,
@@ -22,10 +21,8 @@ use glib::clone;
 
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::ffi::CStr;
 
 use crate::app::func::editor as f_editor;
-use crate::plug::inter_data::DATA as INTER_DATA;
 
 
 struct BuildTreeViewRet
@@ -43,58 +40,47 @@ struct BuildNotebookRet
 }
 
 
-pub fn build_ui(window: ApplicationWindow, dir: &PathBuf) -> Builder
+pub fn build_ui(window: ApplicationWindow, dir: &PathBuf) -> idl::Gui
 {
-    let builder = Builder::new();
-
     window.set_title(Some(&format!("EnCode — {}", &*dir.to_string_lossy())));
-    window.set_default_width(956);
-    window.set_default_height(546);
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.app_window_id).to_string_lossy()},
-        ),
-        &window,
-    );
+    window.set_default_width(1000);
+    window.set_default_height(600);
 
     let dir = Arc::new(dir.clone());
-    let _ = std::env::set_current_dir(&*dir);
-
+    let vbox = Box::new(Orientation::Vertical, 0);
     let paned = Paned::builder()
         .orientation(Orientation::Horizontal)
+        .vexpand(true)
         .position(100)
         .build();
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.paned_id).to_string_lossy()},
-        ),
-        &paned,
-    );
-    let build_tree_view_ret = build_tree_view(&builder, &paned, Arc::clone(&dir));
-    build_notebook(
-        &builder,
+    vbox.append(&paned);
+    let build_tree_view_ret = build_tree_view(&paned, Arc::clone(&dir));
+    let build_notebook_ret = build_notebook(
         Arc::clone(&dir),
         &paned,
         &build_tree_view_ret.tree_view,
     );
-    window.set_child(Some(&paned));
-    return builder;
+    window.set_child(Some(&vbox));
+    return idl::Gui{
+        window,
+        vbox,
+        paned,
+        tree_view: build_tree_view_ret.tree_view,
+        store: build_tree_view_ret.store,
+        column: build_tree_view_ret.column,
+        renderer: build_tree_view_ret.renderer,
+        tree_view_scrolled_window: build_tree_view_ret.tree_view_scrolled_window,
+        notebook:build_notebook_ret.notebook,
+    };
 }
 
 
 fn build_tree_view(
-    builder: &Builder,
     paned: &Paned,
     dir: Arc<PathBuf>,
 ) -> BuildTreeViewRet
 {
     let store = TreeStore::new(&[String::static_type()]);
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.store_id).to_string_lossy()},
-        ),
-        &store,
-    );
     f_editor::load_directory(&store, None, &dir);
 
     let tree_view = TreeView::builder()
@@ -102,31 +88,13 @@ fn build_tree_view(
         //.enable_tree_lines(true)
         .headers_visible(false)
         .build();
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.tree_view_id).to_string_lossy()},
-        ),
-        &tree_view,
-    );
     let key_controller = EventControllerKey::new();
     key_controller.connect_key_pressed(|_, _, _, _| glib::Propagation::Stop);
     tree_view.add_controller(key_controller);
     let column = TreeViewColumn::builder()
         .title(&*dir.file_name().unwrap_or_default().to_string_lossy())
         .build();
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.column_id).to_string_lossy()},
-        ),
-        &column,
-    );
     let renderer = CellRendererText::new();
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.renderer_id).to_string_lossy()},
-        ),
-        &renderer,
-    );
     column.pack_start(&renderer, true);
     column.add_attribute(&renderer, "text", 0);
     tree_view.append_column(&column);
@@ -135,14 +103,6 @@ fn build_tree_view(
         .propagate_natural_height(true)
         .child(&tree_view)
         .build();
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(
-                d.gui_ids.tree_view_scrolled_window_id
-            ).to_string_lossy()},
-        ),
-        &tree_view_scrolled_window,
-    );
     paned.set_start_child(Some(&tree_view_scrolled_window));
 
     return BuildTreeViewRet{
@@ -156,7 +116,6 @@ fn build_tree_view(
 
 
 fn build_notebook(
-    builder: &Builder,
     dir: Arc<PathBuf>,
     paned: &Paned,
     tree_view: &TreeView,
@@ -166,12 +125,6 @@ fn build_notebook(
         .scrollable(true)
         .enable_popup(true)
         .build();
-    builder.expose_object(
-        &*INTER_DATA.with_borrow(
-            |d| unsafe{CStr::from_ptr(d.gui_ids.notebook_id).to_string_lossy()},
-        ),
-        &notebook,
-    );
     paned.set_end_child(Some(&notebook));
     paned.set_focus_child(Some(&notebook));
     tree_view.selection().connect_changed(clone!(
