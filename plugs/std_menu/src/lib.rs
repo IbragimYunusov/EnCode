@@ -3,8 +3,6 @@ use gtk4::prelude::*;
 use libloading::Library;
 use idl::{get_gui_el, get_attr};
 
-type Res<T> = Result<T, Box<dyn std::error::Error>>;
-
 
 macro_rules! menu {
     {$(
@@ -59,7 +57,7 @@ lazy_static::lazy_static! {
 #[no_mangle]
 pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 {
-    Box::new(|| -> Res<()> {
+    Box::new(|| -> idl::Res<()> {
         unsafe{gtk4::set_initialized();}
         let menu = get_attr!([create_menu()].ok());
         unsafe{(*data).app.as_ref().map(|app| app.set_menubar(Some(&menu)));}
@@ -71,7 +69,7 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 }
 
 
-fn create_menu() -> Res<gio::Menu>
+fn create_menu() -> idl::Res<gio::Menu>
 {
     let menu = menu!{
         "Проект", project {
@@ -113,6 +111,7 @@ fn create_menu() -> Res<gio::Menu>
         "Запуск", run {
             "", run {
                 "Запуск", run;
+                "Использовать виртуальное окружение", use_env;
             };
         };
     };

@@ -4,7 +4,6 @@ use gtk4::prelude::*;
 use gtk4::glib::object::Cast;
 
 use idl::{get_attr, get_gui_el};
-type Res<T> = Result<T, Box<dyn std::error::Error>>;
 
 
 macro_rules! create_actions {
@@ -40,7 +39,7 @@ macro_rules! create_actions {
 pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 {
     unsafe{gtk4::set_initialized();}
-    Box::new(|| -> Res<()> {
+    Box::new(|| -> idl::Res<()> {
         create_actions!{*get_gui_el!(data.gui.window), data => {
             project {
                 file {
@@ -61,7 +60,7 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 #[no_mangle]
 pub extern "C" fn save_cur_file(data: idl::Data) -> idl::Ret
 {
-    Box::new(|| -> Res<()> {
+    Box::new(|| -> idl::Res<()> {
         let notebook = get_gui_el!(data.gui.notebook);
         let cur_page = notebook
             .nth_page(notebook.current_page())
@@ -91,7 +90,7 @@ pub extern "C" fn save_cur_file(data: idl::Data) -> idl::Ret
 #[no_mangle]
 pub extern "C" fn save_all_files(data: idl::Data) -> idl::Ret
 {
-    Box::new(|| -> Res<()> {
+    Box::new(|| -> idl::Res<()> {
         let notebook = get_gui_el!(data.gui.notebook);
         for i in 0..notebook.n_pages() {
             let notebook = get_gui_el!(data.gui.notebook);
@@ -158,7 +157,7 @@ fn directory_choose(parent: &gtk4::Dialog, directory_entry: &gtk4::Entry)
 #[no_mangle]
 pub extern "C" fn new_file(data: idl::Data) -> idl::Ret
 {
-    Box::new(|| -> Res<()> {
+    Box::new(|| -> idl::Res<()> {
         let dialog = gtk4::Dialog::builder()
             .transient_for(get_gui_el!(data.gui.window))
             .title("Новый Файл")
@@ -233,7 +232,7 @@ pub extern "C" fn new_file(data: idl::Data) -> idl::Ret
         dialog.connect_response(glib::clone!(
             #[weak] name_entry,
             #[weak] directory_entry,
-            move |dialog, response| if let Err(e) = || -> Res<()> {
+            move |dialog, response| if let Err(e) = || -> idl::Res<()> {
                 if response == gtk4::ResponseType::Accept {
                     let path = std::path::PathBuf::from(directory_entry.text())
                         .join(name_entry.text());
@@ -241,7 +240,7 @@ pub extern "C" fn new_file(data: idl::Data) -> idl::Ret
                     dialog.close();
                 }
                 return Ok(());
-            }() {let _ = || -> Res<()> {
+            }() {let _ = || -> idl::Res<()> {
                 idl::show_error_dialog(get_gui_el!(data.gui.window), e);
                 return Ok(());
             }();},
@@ -256,7 +255,7 @@ pub extern "C" fn new_file(data: idl::Data) -> idl::Ret
 #[no_mangle]
 pub extern "C" fn new_dir(data: idl::Data) -> idl::Ret
 {
-    Box::new(|| -> Res<()> {
+    Box::new(|| -> idl::Res<()> {
         let dialog = gtk4::Dialog::builder()
             .transient_for(get_gui_el!(data.gui.window))
             .title("Новая Директория")
@@ -331,7 +330,7 @@ pub extern "C" fn new_dir(data: idl::Data) -> idl::Ret
         dialog.connect_response(glib::clone!(
             #[weak] name_entry,
             #[weak] directory_entry,
-            move |dialog, response| if let Err(e) = || -> Res<()> {
+            move |dialog, response| if let Err(e) = || -> idl::Res<()> {
                 if response == gtk4::ResponseType::Accept {
                     let path = std::path::PathBuf::from(directory_entry.text())
                         .join(name_entry.text());
@@ -339,7 +338,7 @@ pub extern "C" fn new_dir(data: idl::Data) -> idl::Ret
                     dialog.close();
                 }
                 return Ok(());
-            }() {let _ = || -> Res<()> {
+            }() {let _ = || -> idl::Res<()> {
                 idl::show_error_dialog(get_gui_el!(data.gui.window), e);
                 return Ok(());
             }();},

@@ -710,6 +710,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "std_highlighting"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "glib",
+ "gtk4",
+ "inter_data_lib",
+ "sourceview5",
+]
+
+[[package]]
 name = "std_menu"
 version = "0.1.0"
 dependencies = [

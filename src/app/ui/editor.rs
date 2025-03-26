@@ -225,21 +225,12 @@ fn build_text_area(buffer: &Buffer, ext: &str) -> ScrolledWindow
         .insert_spaces_instead_of_tabs(true)
         .tab_width(4)
         .build();
-    let language_manager = LanguageManager::new();
-    buffer.set_highlight_matching_brackets(true);
-    buffer.set_highlight_syntax(true);
     if let Ok((scheme_name, dir)) = crate::app::func::get_name_and_path_for_color_scheme() {
         let style_scheme_manager = StyleSchemeManager::default();
         style_scheme_manager.append_search_path(&*dir.to_string_lossy());
         let style_scheme = style_scheme_manager.scheme(&scheme_name);
         buffer.set_style_scheme(style_scheme.as_ref());
     }
-    buffer.set_language(
-        match ext {
-            "py" => language_manager.language("python3"),
-            _ => None,
-        }.as_ref(),
-    );
     let text_scrolled_window = ScrolledWindow::builder()
         .propagate_natural_height(true)
         .child(&view)
