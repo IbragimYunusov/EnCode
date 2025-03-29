@@ -12,8 +12,11 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
     Box::new(|| -> idl::Res<()> {
         get_gui_el!(data.gui.notebook).connect_page_added(move |notebook, page, _| {
             if let Err(e) = || -> idl::Res<()> {
-                let scrolled_window: &gtk4::ScrolledWindow
-                    = get_attr!(page.downcast_ref());
+                let vbox = get_attr!(page.downcast_ref::<gtk4::Box>());
+                let scrolled_window = get_attr!(vbox.first_child());
+                let scrolled_window = get_attr!(
+                    scrolled_window.downcast_ref::<gtk4::ScrolledWindow>()
+                );
                 let view = get_attr!(scrolled_window.child());
                 let view: &sourceview5::View = get_attr!(view.downcast_ref());
                 let buffer = view.buffer();
@@ -27,7 +30,17 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
                 let ext = PathBuf::from(tab_label.text());
                 let ext = ext.extension().unwrap_or_default();
                 let lm = sourceview5::LanguageManager::new();
-                buffer.set_language(language(&lm, &*ext.to_string_lossy()).as_ref());
+                let language = language(&lm, &*ext.to_string_lossy());
+                if let Some(lang) = language.as_ref() {
+                    if let Some(hbox) = vbox.last_child() {
+                        if let Some(hbox) = hbox.downcast_ref::<gtk4::Box>() {
+                            hbox.append(
+                                &gtk4::Label::new(Some(lang.name().as_str())),
+                            );
+                        }
+                    }
+                }
+                buffer.set_language(language.as_ref());
                 return Ok(());
             }() {let _ = || -> idl::Res<()> {
                 idl::show_error_dialog(get_gui_el!(data.gui.window), e);
@@ -284,7 +297,7 @@ pub fn language(
         "ml" | "eliom" | "eliomi" | "ml4" | "mli" | "mll" | "mly" => lm.language("ocaml"),
         "objdump" => lm.language("objdump"),
         "m" | "h" => lm.language("objective-c"),
-        "mm" => lm.language("objective-c++"),
+        "mm" => lm.language("objective-cpp"),
         "j" | "sj" => lm.language("objective-j"),
         "omgrofl" => lm.language("omgrofl"),
         "opa" => lm.language("opa"),

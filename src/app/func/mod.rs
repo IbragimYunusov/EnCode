@@ -8,18 +8,6 @@ pub mod launcher;
 pub mod editor;
 
 
-pub fn get_hex_fg_color() -> String
-{
-    let fg_color = gtk4::Label::new(None).style_context().color();
-    return format!(
-        "{:02x}{:02x}{:02x}",
-        (fg_color.red() * 255.) as u8,
-        (fg_color.green() * 255.) as u8,
-        (fg_color.blue() * 255.) as u8,
-    );
-}
-
-
 pub fn get_dir() -> Option<PathBuf>
 {
     return Some(std::env::current_exe().ok()?.parent()?.to_path_buf());
@@ -36,7 +24,7 @@ pub fn get_name_and_path_for_color_scheme() -> Result<(String, PathBuf), Box<dyn
         ),
     )?;
     return Ok((
-        if is_current_theme_dark() {
+        if idl::is_current_theme_dark() {
             "encode-dark".to_string()
         } else {
             "Adwaita".to_string()
@@ -44,13 +32,6 @@ pub fn get_name_and_path_for_color_scheme() -> Result<(String, PathBuf), Box<dyn
         dir.join("static").join("color_schemes"),
     ));
 }
-
-
-fn is_current_theme_dark() -> bool {
-    let clr = gtk4::Label::new(None).style_context().color();
-    return clr.red() >= 0.5 && clr.green() >= 0.5 && clr.blue() >= 0.5;
-}
-
 
 
 pub fn get_name_and_path_for_search_icon() -> Result<(String, PathBuf), Box<dyn Error>>
@@ -62,7 +43,7 @@ pub fn get_name_and_path_for_search_icon() -> Result<(String, PathBuf), Box<dyn 
             "Не удалось получить директорию текущего исполняемого файла",
         ),
     )?;
-    let hex_fg_color = get_hex_fg_color();
+    let hex_fg_color = idl::get_hex_fg_color();
     let ret_dir = dir
         .join("cache")
         .join("static")

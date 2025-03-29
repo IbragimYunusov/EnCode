@@ -1,6 +1,7 @@
 use gtk4::{
     prelude::*,
     gdk::Display,
+    gdk_pixbuf::Pixbuf,
     Application,
     ApplicationWindow,
     IconTheme,
@@ -14,6 +15,20 @@ pub mod editor;
 pub const INNER_SPACING: i32 = 6;
 pub const OUTTER_SPACING: i32 = 8;
 pub const SPACING_DELTA: i32 = OUTTER_SPACING - INNER_SPACING;
+
+
+thread_local!{
+    pub static FILE_ICON: Option<Pixbuf>
+        = func::editor::get_icon("file.svg").ok();
+    pub static DIR_ICON: Option<Pixbuf>
+        = func::editor::get_icon("dir.svg").ok();
+    pub static FILLED_DIR_ICON: Option<Pixbuf>
+        = func::editor::get_icon("filled_dir.svg").ok();
+    pub static SYMLINK_ICON: Option<Pixbuf>
+        = func::editor::get_icon("symlink.svg").ok();
+    pub static UNKNOWN_ICON: Option<Pixbuf>
+        = func::editor::get_icon("unknown.svg").ok();
+}
 
 
 pub enum BuildUIRet {

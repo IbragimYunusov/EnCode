@@ -91,6 +91,10 @@ fn create_menu() -> idl::Res<gio::Menu>
             };
         };
         "Правка", edit {
+            "", tab {
+                "Закрыть вкладку", close;
+                "Закрыть все вкладки", close_all;
+            };
             "", undo_redo {
                 "Отмена", undo;
                 "Заново", redo;
@@ -104,6 +108,11 @@ fn create_menu() -> idl::Res<gio::Menu>
             "", search {
                 "Искать", find;
                 "Заменить", replace;
+            };
+        };
+        "Pyright", pyright {
+            "", diagnostic {
+                "Диагностика Проекта", project;
             };
         };
         "Запуск", run {

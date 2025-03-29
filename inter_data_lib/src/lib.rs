@@ -7,6 +7,24 @@ pub type Ret = Box<Option<String>>;
 pub type Res<T> = Result<T, Box<dyn std::error::Error>>;
 
 
+pub fn get_hex_fg_color() -> String
+{
+    return if is_current_theme_dark() {"acb4c1"} else {"ffffff"}.to_string();
+}
+
+
+pub fn is_current_theme_dark() -> bool {
+    return || -> Option<bool> {
+        return Some(
+            gtk4::Settings::default()?
+                .gtk_theme_name()?
+                .to_lowercase()
+                .contains("dark"),
+        );
+    }().unwrap_or_default();
+}
+
+
 #[macro_export]
 macro_rules! get_attr {
     (
@@ -22,7 +40,7 @@ macro_rules! get_attr {
                 std::io::ErrorKind::Other,
                 format!(
                     "Не удалось получить атрибут {} объекта {} или его атрибута",
-                    stringify!($attr),
+                    stringify!($attr$(::<$($generic),*>)?),
                     stringify!($obj),
                 ),
             ))?
@@ -39,7 +57,10 @@ macro_rules! get_attr {
             $obj$(.$attr$(::<$($generic),*>)?($($params),*))*
         ).ok_or(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Объект {} или его атрибут — None", stringify!($obj)),
+            format!(
+                "Объект {} или его атрибут — None",
+                stringify!($obj),
+            ),
         ))?
     };
     (
@@ -55,7 +76,7 @@ macro_rules! get_attr {
                 std::io::ErrorKind::Other,
                 format!(
                     "Не удалось получить атрибут {} объекта {} или его атрибута",
-                    stringify!($attr),
+                    stringify!($attr$(::<$($generic),*>)?),
                     stringify!($obj),
                 ),
             ))?
@@ -71,7 +92,10 @@ macro_rules! get_attr {
         $crate::get_attr!(
             [$obj]$(.$attr$(::<$($generic),*>)?($($params),*))*
         ).ok_or(std::io::Error::other(
-            format!("Выражение {} или его атрибут — None", stringify!($obj)),
+            format!(
+                "Выражение {} или его атрибут — None",
+                stringify!($obj),
+            ),
         ))?
     };
 }
@@ -94,14 +118,27 @@ macro_rules! get_str {
 
 
 #[repr(C)]
+pub struct TreeViewIcons {
+    pub file: *const Option<gtk4::gdk_pixbuf::Pixbuf>,
+    pub dir: *const Option<gtk4::gdk_pixbuf::Pixbuf>,
+    pub filled_dir: *const Option<gtk4::gdk_pixbuf::Pixbuf>,
+    pub symlink: *const Option<gtk4::gdk_pixbuf::Pixbuf>,
+    pub unknown: *const Option<gtk4::gdk_pixbuf::Pixbuf>,
+}
+
+
+#[repr(C)]
 pub struct Gui {
     pub window: gtk4::ApplicationWindow,
     pub vbox: gtk4::Box,
     pub paned: gtk4::Paned,
+    pub tree_view_vbox: gtk4::Box,
     pub tree_view: gtk4::TreeView,
     pub store: gtk4::TreeStore,
     pub column: gtk4::TreeViewColumn,
-    pub renderer: gtk4::CellRendererText,
+    pub renderer0: gtk4::CellRendererPixbuf,
+    pub renderer1: gtk4::CellRendererPixbuf,
+    pub renderer2: gtk4::CellRendererText,
     pub tree_view_scrolled_window: gtk4::ScrolledWindow,
     pub notebook: gtk4::Notebook,
 }
@@ -112,6 +149,7 @@ pub struct InterData {
     pub version: *const c_char,
     pub gui: Option<Gui>,
     pub app: Option<gtk4::Application>,
+    pub tree_view_icons: TreeViewIcons,
     pub inner_spacing: i32,
     pub outter_spacing: i32,
     pub spacing_delta: i32,

@@ -2,6 +2,7 @@ use gtk4::{
     prelude::*,
     ApplicationWindow,
     Box,
+    CellRendererPixbuf,
     CellRendererText,
     EventControllerKey,
     GestureClick,
@@ -16,7 +17,8 @@ use gtk4::{
     TreeViewColumn,
     WrapMode,
 };
-use sourceview5::{prelude::*, Buffer, LanguageManager, StyleSchemeManager};
+use gtk4::gdk_pixbuf::{prelude::*, Pixbuf};
+use sourceview5::{prelude::*, Buffer, LanguageManager, StyleSchemeManager, View};
 use glib::clone;
 
 use std::path::PathBuf;
@@ -27,10 +29,13 @@ use crate::app::func::editor as f_editor;
 
 struct BuildTreeViewRet
 {
+    pub tree_view_vbox: Box,
     pub tree_view: TreeView,
     pub store: TreeStore,
     pub column: TreeViewColumn,
-    pub renderer: CellRendererText,
+    pub renderer0: CellRendererPixbuf,
+    pub renderer1: CellRendererPixbuf,
+    pub renderer2: CellRendererText,
     pub tree_view_scrolled_window: ScrolledWindow,
 }
 
@@ -65,51 +70,77 @@ pub fn build_ui(window: ApplicationWindow, dir: &PathBuf) -> idl::Gui
         window,
         vbox,
         paned,
+        tree_view_vbox: build_tree_view_ret.tree_view_vbox,
         tree_view: build_tree_view_ret.tree_view,
         store: build_tree_view_ret.store,
         column: build_tree_view_ret.column,
-        renderer: build_tree_view_ret.renderer,
+        renderer0: build_tree_view_ret.renderer0,
+        renderer1: build_tree_view_ret.renderer1,
+        renderer2: build_tree_view_ret.renderer2,
         tree_view_scrolled_window: build_tree_view_ret.tree_view_scrolled_window,
         notebook:build_notebook_ret.notebook,
     };
 }
 
 
-fn build_tree_view(
-    paned: &Paned,
-    dir: Arc<PathBuf>,
-) -> BuildTreeViewRet
+fn build_tree_view(paned: &Paned, dir: Arc<PathBuf>) -> BuildTreeViewRet
 {
-    let store = TreeStore::new(&[String::static_type()]);
+    let store = TreeStore::new(&[
+        Pixbuf::static_type(),
+        Pixbuf::static_type(),
+        String::static_type(),
+    ]);
     f_editor::load_directory(&store, None, &dir);
 
+    let tree_view_vbox = Box::new(Orientation::Vertical, 0);
     let tree_view = TreeView::builder()
         .model(&store)
-        //.enable_tree_lines(true)
         .headers_visible(false)
         .build();
+    tree_view.connect_row_expanded(clone!(
+        #[weak] store,
+        move |_, iter, _| crate::app::ui::FILLED_DIR_ICON.with(
+            |p| if let Some(pb) = p {store.set_value(iter, 0, &pb.to_value())}
+        ),
+    ));
+    tree_view.connect_row_collapsed(clone!(
+        #[weak] store,
+        move |_, iter, _| crate::app::ui::DIR_ICON.with(
+            |p| if let Some(pb) = p {store.set_value(iter, 0, &pb.to_value())}
+        ),
+    ));
     let key_controller = EventControllerKey::new();
     key_controller.connect_key_pressed(|_, _, _, _| glib::Propagation::Stop);
     tree_view.add_controller(key_controller);
-    let column = TreeViewColumn::builder()
-        .title(&*dir.file_name().unwrap_or_default().to_string_lossy())
-        .build();
-    let renderer = CellRendererText::new();
-    column.pack_start(&renderer, true);
-    column.add_attribute(&renderer, "text", 0);
+    let column = TreeViewColumn::new();
+    let renderer0 = CellRendererPixbuf::new();
+    let renderer1 = CellRendererPixbuf::new();
+    let renderer2 = CellRendererText::new();
+    column.pack_start(&renderer0, false);
+    column.add_attribute(&renderer0, "pixbuf", 0);
+    column.pack_start(&renderer1, false);
+    column.add_attribute(&renderer1, "pixbuf", 1);
+    renderer1.set_fixed_size(10, 14);
+    column.pack_start(&renderer2, true);
+    column.add_attribute(&renderer2, "text", 2);
     tree_view.append_column(&column);
 
     let tree_view_scrolled_window = ScrolledWindow::builder()
         .propagate_natural_height(true)
         .child(&tree_view)
+        .vexpand(true)
         .build();
-    paned.set_start_child(Some(&tree_view_scrolled_window));
+    tree_view_vbox.append(&tree_view_scrolled_window);
+    paned.set_start_child(Some(&tree_view_vbox));
 
     return BuildTreeViewRet{
+        tree_view_vbox,
         tree_view,
         store,
         column,
-        renderer,
+        renderer0,
+        renderer1,
+        renderer2,
         tree_view_scrolled_window,
     };
 }
@@ -128,6 +159,7 @@ fn build_notebook(
     paned.set_end_child(Some(&notebook));
     paned.set_focus_child(Some(&notebook));
     tree_view.selection().connect_changed(clone!(
+        #[weak] tree_view,
         #[weak] notebook,
         move |selection| {
             if let Some((model, iter)) = selection.selected() {
@@ -137,7 +169,7 @@ fn build_notebook(
                 for index in path.indices() {
                     indices.push(index);
                     if let Some(iter) = model.iter(&TreePath::from_indices(&indices)) {
-                        let name: String = model.get::<String>(&iter, 0);
+                        let name: String = model.get::<String>(&iter, 2);
                         path_end.push(name);
                     }
                 }
@@ -161,18 +193,21 @@ fn build_notebook(
                     }
                 }
             }
+            tree_view.selection().unselect_all();
         },
     ));
     return BuildNotebookRet{notebook};
 }
 
 
-fn build_tab(notebook: &Notebook, content: String, path_end: PathBuf)
-{
+fn build_tab(
+    notebook: &Notebook,
+    content: String,
+    path_end: PathBuf,
+) {
     notebook.set_current_page(Some({
         let text_area = build_text_area(
             &Buffer::builder().text(content).build(),
-            &*path_end.extension().unwrap_or_default().to_string_lossy(),
         );
         let tab_box = Box::builder()
             .orientation(Orientation::Horizontal)
@@ -207,10 +242,24 @@ fn build_tab(notebook: &Notebook, content: String, path_end: PathBuf)
 }
 
 
-fn build_text_area(buffer: &Buffer, ext: &str) -> ScrolledWindow
+fn build_text_area(buffer: &Buffer) -> Box
 {
+    let bottom_hbox = Box::builder()
+        .orientation(Orientation::Horizontal)
+        .spacing(super::INNER_SPACING)
+        .margin_end(super::OUTTER_SPACING)
+        .margin_top(super::INNER_SPACING)
+        .margin_start(super::OUTTER_SPACING)
+        .margin_bottom(super::INNER_SPACING)
+        .build();
+    let pos_label = Label::builder()
+        .hexpand(true)
+        .halign(gtk4::Align::End)
+        .build();
+    bottom_hbox.append(&pos_label);
     let view = sourceview5::View::builder()
         .buffer(buffer)
+        .vexpand(true)
         .wrap_mode(WrapMode::None)
         .highlight_current_line(true)
         .show_line_numbers(true)
@@ -231,9 +280,23 @@ fn build_text_area(buffer: &Buffer, ext: &str) -> ScrolledWindow
         let style_scheme = style_scheme_manager.scheme(&scheme_name);
         buffer.set_style_scheme(style_scheme.as_ref());
     }
+    buffer.connect_cursor_position_notify(clone!(
+        #[weak] pos_label,
+        move |buf| {
+            let iter = buf.iter_at_offset(buf.cursor_position());
+            pos_label.set_label(&format!(
+                "{}:{}",
+                iter.line(),
+                iter.line_offset(),
+            ));
+        },
+    ));
     let text_scrolled_window = ScrolledWindow::builder()
         .propagate_natural_height(true)
         .child(&view)
         .build();
-    return text_scrolled_window;
+    let vbox = Box::new(Orientation::Vertical, 0);
+    vbox.append(&text_scrolled_window);
+    vbox.append(&bottom_hbox);
+    return vbox;
 }

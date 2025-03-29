@@ -58,7 +58,7 @@ pub fn get_full_format_logo(height_request: i32) -> Result<gtk4::Image, Box<dyn 
             "Не удалось получить директорию текущего исполняемого файла",
         ),
     )?;
-    let hex_fg_color = super::get_hex_fg_color();
+    let hex_fg_color = idl::get_hex_fg_color();
     let loader = gtk4::gdk_pixbuf::PixbufLoader::new();
     loader.write(std::fs::read_to_string({
         let cached_logo_dir = dir
@@ -77,8 +77,8 @@ pub fn get_full_format_logo(height_request: i32) -> Result<gtk4::Image, Box<dyn 
             )?;
             std::fs::File::create(&cached_logo)?.write_all(
                 svg.replace(
-                    "fill=\"black\"",
-                    &format!("fill=\"#{}\"", &hex_fg_color),
+                    "\"black\"",
+                    &format!("\"#{}\"", &hex_fg_color),
                 ).as_bytes(),
             )?;
         }
