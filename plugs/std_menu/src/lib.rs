@@ -57,7 +57,7 @@ lazy_static::lazy_static! {
 #[no_mangle]
 pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 {
-    Box::new(|| -> idl::Res<()> {
+    Box::new(|| -> idl::Res {
         unsafe{gtk4::set_initialized();}
         let menu = get_attr!([create_menu()].ok());
         get_gui_el!(data.gui.window).set_show_menubar(true);
@@ -113,6 +113,7 @@ fn create_menu() -> idl::Res<gio::Menu>
         "Pyright", pyright {
             "", diagnostic {
                 "Диагностика Проекта", project;
+                "Диагностика Текущего Файла", cur_file;
             };
         };
         "Запуск", run {

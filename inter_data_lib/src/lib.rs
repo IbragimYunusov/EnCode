@@ -4,7 +4,7 @@ use std::os::raw::c_char;
 pub type Data = *mut InterData;
 pub type Ret = Box<Option<String>>;
 
-pub type Res<T> = Result<T, Box<dyn std::error::Error>>;
+pub type Res<T=()> = Result<T, Box<dyn std::error::Error>>;
 
 
 pub fn get_hex_fg_color() -> String

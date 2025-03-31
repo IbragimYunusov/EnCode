@@ -29,7 +29,7 @@ macro_rules! create_shortcuts {
 pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 {
     unsafe{gtk4::set_initialized();}
-    Box::new(|| -> idl::Res<()> {
+    Box::new(|| -> idl::Res {
         create_shortcuts!{get_attr!([(*data).app.as_ref()]?) => {
             project {
                 project {

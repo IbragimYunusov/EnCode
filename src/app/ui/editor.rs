@@ -18,7 +18,7 @@ use gtk4::{
     WrapMode,
 };
 use gtk4::gdk_pixbuf::{prelude::*, Pixbuf};
-use sourceview5::{prelude::*, Buffer, LanguageManager, StyleSchemeManager, View};
+use sourceview5::{prelude::*, Buffer, StyleSchemeManager, View};
 use glib::clone;
 
 use std::path::PathBuf;
@@ -257,7 +257,7 @@ fn build_text_area(buffer: &Buffer) -> Box
         .halign(gtk4::Align::End)
         .build();
     bottom_hbox.append(&pos_label);
-    let view = sourceview5::View::builder()
+    let view = View::builder()
         .buffer(buffer)
         .vexpand(true)
         .wrap_mode(WrapMode::None)
@@ -286,7 +286,7 @@ fn build_text_area(buffer: &Buffer) -> Box
             let iter = buf.iter_at_offset(buf.cursor_position());
             pos_label.set_label(&format!(
                 "{}:{}",
-                iter.line(),
+                iter.line() + 1,
                 iter.line_offset(),
             ));
         },

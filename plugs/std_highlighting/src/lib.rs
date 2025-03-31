@@ -9,9 +9,9 @@ use idl::{get_gui_el, get_attr};
 pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 {
     unsafe{gtk4::set_initialized();}
-    Box::new(|| -> idl::Res<()> {
+    Box::new(|| -> idl::Res {
         get_gui_el!(data.gui.notebook).connect_page_added(move |notebook, page, _| {
-            if let Err(e) = || -> idl::Res<()> {
+            if let Err(e) = || -> idl::Res {
                 let vbox = get_attr!(page.downcast_ref::<gtk4::Box>());
                 let scrolled_window = get_attr!(vbox.first_child());
                 let scrolled_window = get_attr!(
@@ -42,7 +42,7 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
                 }
                 buffer.set_language(language.as_ref());
                 return Ok(());
-            }() {let _ = || -> idl::Res<()> {
+            }() {let _ = || -> idl::Res {
                 idl::show_error_dialog(get_gui_el!(data.gui.window), e);
                 return Ok(());
             }();}
