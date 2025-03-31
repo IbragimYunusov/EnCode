@@ -19,7 +19,12 @@ lazy_static!
                     plug.as_ref().ok()?.dev_name.clone(),
                     unsafe {Library::new(
                         crate::app::func::get_dir()?.join(
-                            format!("lib{}.so", &plug.as_ref().ok()?.dev_name),
+                            format!(
+                                "{}{}{}",
+                                std::env::consts::DLL_PREFIX,
+                                &plug.as_ref().ok()?.dev_name,
+                                std::env::consts::DLL_SUFFIX,
+                            ),
                         ),
                     ).ok()?},
                 ))} else {None}).collect())
