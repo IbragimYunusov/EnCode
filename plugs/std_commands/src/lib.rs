@@ -4,7 +4,7 @@ use std::io::Write;
 use gtk4::prelude::*;
 use gtk4::glib::object::Cast;
 
-use idl::{get_attr, get_gui_el};
+use idl::{get_attr, get_gui_el, get_str_opt};
 
 
 macro_rules! create_actions {
@@ -136,6 +136,12 @@ fn directory_choose(parent: &gtk4::Dialog, directory_entry: &gtk4::Entry)
         .action(gtk4::FileChooserAction::SelectFolder)
         .transient_for(parent)
         .build();
+    file_chooser.set_icon_name(
+        parent
+            .icon_name()
+            .as_ref()
+            .map(glib::GString::as_str)
+    );
     let _ = file_chooser.set_current_folder(
         std::env::current_dir()
             .ok()
@@ -171,6 +177,12 @@ pub extern "C" fn new_file(data: idl::Data) -> idl::Ret
             .transient_for(get_gui_el!(data.gui.window))
             .title("Новый Файл")
             .build();
+        dialog.set_icon_name(
+            get_gui_el!(data.gui.window)
+                .icon_name()
+                .as_ref()
+                .map(glib::GString::as_str)
+        );
         let vbox = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Vertical)
             .spacing(unsafe{(*data).inner_spacing})
@@ -272,6 +284,12 @@ pub extern "C" fn new_dir(data: idl::Data) -> idl::Ret
             .transient_for(get_gui_el!(data.gui.window))
             .title("Новая Директория")
             .build();
+        dialog.set_icon_name(
+            get_gui_el!(data.gui.window)
+                .icon_name()
+                .as_ref()
+                .map(glib::GString::as_str)
+        );
         let vbox = gtk4::Box::builder()
             .orientation(gtk4::Orientation::Vertical)
             .spacing(unsafe{(*data).inner_spacing})

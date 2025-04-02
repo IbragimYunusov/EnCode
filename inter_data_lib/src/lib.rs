@@ -117,6 +117,24 @@ macro_rules! get_str {
 }
 
 
+#[macro_export]
+macro_rules! get_str_opt {
+    ($data:ident$(.$attr:ident)*) => {
+        unsafe{
+            if (*$data)$(.$attr)* == std::ptr::null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr((*$data)$(.$attr)*)
+                        .to_string_lossy()
+                        .to_string()
+                )
+            }
+        }
+    };
+}
+
+
 #[repr(C)]
 pub struct TreeViewIcons {
     pub file: *const Option<gtk4::gdk_pixbuf::Pixbuf>,
@@ -147,6 +165,7 @@ pub struct Gui {
 #[repr(C)]
 pub struct InterData {
     pub version: *const c_char,
+    pub icon_name: *const c_char,
     pub gui: Option<Gui>,
     pub app: Option<gtk4::Application>,
     pub tree_view_icons: TreeViewIcons,
@@ -168,6 +187,7 @@ pub fn show_error_dialog(
         gtk4::ButtonsType::Ok,
         format!("Ошибка: {}", err.to_string()),
     );
+    dialog.set_icon_name(parent.icon_name().as_ref().map(|g| g.as_str()));
     dialog.set_title(Some("Ошибка"));
     dialog.connect_response(|dialog, _| dialog.destroy());
     dialog.show();

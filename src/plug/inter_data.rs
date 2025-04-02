@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::os::raw::c_char;
+use std::ptr::null;
 
 use gtk4::gdk_pixbuf::Pixbuf;
 
@@ -7,6 +8,7 @@ use gtk4::gdk_pixbuf::Pixbuf;
 thread_local! {
     pub static DATA: RefCell<idl::InterData> = RefCell::new(idl::InterData {
         version: b"0.1.0\0".as_ptr() as *const c_char,
+        icon_name: null(),
         gui: None,
         app: None,
         tree_view_icons: idl::TreeViewIcons {

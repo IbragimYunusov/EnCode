@@ -1,3 +1,5 @@
+use std::ffi::c_char;
+
 use gtk4::{
     prelude::*,
     gdk::Display,
@@ -64,6 +66,11 @@ pub fn build_ui(app: &Application) -> BuildUIRet
         .application(app)
         .build();
     window.set_icon_name(name.as_ref().map(String::as_str));
+    crate::plug::inter_data::DATA.with_borrow_mut(
+        |data| if let Some(icon_name) = name {
+            data.icon_name = icon_name.as_ptr() as *const c_char;
+        }
+    );
     let ret = match *super::APP_TYPE {
         super::AppType::LAUNCHER =>
             BuildUIRet::Launcher(launcher::build_ui(window)),

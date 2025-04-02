@@ -162,6 +162,7 @@ pub mod new_project
             .title("Создание Нового Проекта")
             .modal(true)
             .build();
+        dialog.set_icon_name(parent.icon_name().as_ref().map(|g| g.as_str()));
 
         let vbox = Box::builder()
             .orientation(Orientation::Vertical)
@@ -397,6 +398,7 @@ pub mod open_project
             .modal(true)
             .vexpand(true)
             .build();
+        dialog.set_icon_name(parent.icon_name().as_ref().map(|g| g.as_str()));
 
         let vbox = Box::builder()
             .orientation(Orientation::Vertical)
@@ -440,10 +442,10 @@ pub mod open_project
             .halign(Align::End)
             .spacing(super::super::INNER_SPACING)
             .build();
-        let edit_button = Button::builder()
-            .label("✏️")
-            .sensitive(false)
-            .build();
+        // let edit_button = Button::builder()
+        //     .label("✏️")
+        //     .sensitive(false)
+        //     .build();
         let delete_button = Button::builder()
             .label("🗑️")
             .sensitive(false)
@@ -607,16 +609,16 @@ pub mod open_project
         list_box.connect_row_activated(
             clone!(
                 #[weak] ok_button,
-                #[weak] edit_button,
+                // #[weak] edit_button,
                 #[weak] delete_button,
                 move |_, _| {
                     ok_button.set_sensitive(true);
-                    edit_button.set_sensitive(true);
+                    // edit_button.set_sensitive(true);
                     delete_button.set_sensitive(true);
                 },
             ),
         );
-        tool_box.append(&edit_button);
+        // tool_box.append(&edit_button);
         tool_box.append(&delete_button);
         tool_box.append(&from_dir_button);
         tool_box.append(&new_button);
@@ -718,6 +720,7 @@ pub mod plugin_settings
             .modal(true)
             .vexpand(true)
             .build();
+        dialog.set_icon_name(parent.icon_name().as_ref().map(|g| g.as_str()));
 
         let vbox = Box::builder()
             .orientation(Orientation::Vertical)

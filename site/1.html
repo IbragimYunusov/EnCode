@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="en" class="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>EnCode - Fast & Extensible IDE</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                light: "#4f46e5",
+                                dark: "#7c3aed",
+                            },
+                            secondary: {
+                                light: "#10b981",
+                                dark: "#34d399",
+                            },
+                            background: {
+                                light: "#f8fafc",
+                                dark: "#0f172a",
+                            },
+                            surface: {
+                                light: "#ffffff",
+                                dark: "#1e293b",
+                            },
+                            text: {
+                                light: "#334155",
+                                dark: "#e2e8f0",
+                            },
+                        },
+                        animation: {
+                            float: "float 3s ease-in-out infinite",
+                            "fade-in": "fadeIn 0.5s ease-out forwards",
+                            "slide-up": "slideUp 0.5s ease-out forwards",
+                        },
+                        keyframes: {
+                            float: {
+                                "0%, 100%": { transform: "translateY(0)" },
+                                "50%": { transform: "translateY(-10px)" },
+                            },
+                            fadeIn: {
+                                "0%": { opacity: "0" },
+                                "100%": { opacity: "1" },
+                            },
+                            slideUp: {
+                                "0%": {
+                                    transform: "translateY(20px)",
+                                    opacity: "0",
+                                },
+                                "100%": {
+                                    transform: "translateY(0)",
+                                    opacity: "1",
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+            body {
+                font-family: "Inter", sans-serif;
+                transition:
+                    background-color 0.3s ease,
+                    color 0.3s ease;
+            }
+
+            .code-block {
+                font-family: "Courier New", monospace;
+            }
+
+            .theme-toggle {
+                transition: transform 0.3s ease;
+            }
+
+            .theme-toggle:hover {
+                transform: rotate(30deg);
+            }
+
+            .feature-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+
+            .feature-card {
+                transition: all 0.3s ease;
+            }
+
+            .nav-link {
+                position: relative;
+            }
+
+            .nav-link::after {
+                content: "";
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                width: 0;
+                height: 2px;
+                background-color: currentColor;
+                transition: width 0.3s ease;
+            }
+
+            .nav-link:hover::after {
+                width: 100%;
+            }
+
+            .hero-code {
+                background: linear-gradient(
+                    145deg,
+                    rgba(79, 70, 229, 0.1) 0%,
+                    rgba(124, 58, 237, 0.1) 100%
+                );
+            }
+
+            .dark .hero-code {
+                background: linear-gradient(
+                    145deg,
+                    rgba(79, 70, 229, 0.2) 0%,
+                    rgba(124, 58, 237, 0.2) 100%
+                );
+            }
+
+            .btn-primary {
+                background: linear-gradient(145deg, #4f46e5 0%, #7c3aed 100%);
+            }
+
+            .dark .btn-primary {
+                background: linear-gradient(145deg, #7c3aed 0%, #9333ea 100%);
+            }
+
+            .btn-secondary {
+                background: linear-gradient(145deg, #10b981 0%, #34d399 100%);
+            }
+
+            .dark .btn-secondary {
+                background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+            }
+        </style>
+    </head>
+    <body
+        class="bg-background-light text-text-light dark:bg-background-dark dark:text-text-dark min-h-screen"
+    >
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-50 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700"
+        >
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <div
+                            class="w-8 h-8 bg-primary-light dark:bg-primary-dark rounded-md flex items-center justify-center"
+                        >
+                            <i class="fas fa-code text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold">EnCode</span>
+                    </div>
+
+                    <nav class="hidden md:flex space-x-8">
+                        <a href="#features" class="nav-link font-medium"
+                            >Features</a
+                        >
+                        <a href="#screenshots" class="nav-link font-medium"
+                            >Screenshots</a
+                        >
+                        <a href="#download" class="nav-link font-medium"
+                            >Download</a
+                        >
+                        <a
+                            href="https://github.com"
+                            target="_blank"
+                            class="nav-link font-medium"
+                            >GitHub</a
+                        >
+                    </nav>
+
+                    <div class="flex items-center space-x-4">
+                        <button
+                            id="theme-toggle"
+                            class="theme-toggle p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                        >
+                            <i class="fas fa-moon dark:hidden"></i>
+                            <i class="fas fa-sun hidden dark:block"></i>
+                        </button>
+                        <a
+                            href="#download"
+                            class="btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                        >
+                            Download
+                        </a>
+                        <button class="md:hidden p-2" id="mobile-menu-button">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile menu -->
+            <div
+                id="mobile-menu"
+                class="hidden md:hidden bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-700"
+            >
+                <div
+                    class="container mx-auto px-4 py-2 flex flex-col space-y-2"
+                >
+                    <a href="#features" class="py-2 font-medium">Features</a>
+                    <a href="#screenshots" class="py-2 font-medium"
+                        >Screenshots</a
+                    >
+                    <a href="#download" class="py-2 font-medium">Download</a>
+                    <a
+                        href="https://github.com"
+                        target="_blank"
+                        class="py-2 font-medium"
+                        >GitHub</a
+                    >
+                </div>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="py-16 md:py-24">
+            <div
+                class="container mx-auto px-4 flex flex-col md:flex-row items-center"
+            >
+                <div class="md:w-1/2 mb-12 md:mb-0 animate-fade-in">
+                    <h1
+                        class="text-4xl md:text-5xl font-bold mb-6 leading-tight"
+                    >
+                        The
+                        <span class="text-primary-light dark:text-primary-dark"
+                            >Fast</span
+                        >
+                        &
+                        <span
+                            class="text-secondary-light dark:text-secondary-dark"
+                            >Extensible</span
+                        >
+                        IDE
+                    </h1>
+                    <p class="text-lg mb-8 text-gray-600 dark:text-gray-300">
+                        Built with Rust and GTK4, EnCode delivers unparalleled
+                        performance while remaining fully customizable through
+                        plugins.
+                    </p>
+                    <div
+                        class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4"
+                    >
+                        <a
+                            href="#download"
+                            class="btn-primary text-white px-6 py-3 rounded-md font-medium text-center hover:opacity-90 transition-opacity"
+                        >
+                            Download Now
+                        </a>
+                        <a
+                            href="#features"
+                            class="btn-secondary text-white px-6 py-3 rounded-md font-medium text-center hover:opacity-90 transition-opacity"
+                        >
+                            Explore Features
+                        </a>
+                    </div>
+                </div>
+                <div class="md:w-1/2 animate-slide-up">
+                    <div
+                        class="hero-code p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg max-w-lg mx-auto"
+                    >
+                        <div class="flex space-x-2 mb-4">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div
+                                class="w-3 h-3 rounded-full bg-yellow-500"
+                            ></div>
+                            <div
+                                class="w-3 h-3 rounded-full bg-green-500"
+                            ></div>
+                        </div>
+                        <pre
+                            class="code-block text-sm overflow-x-auto"
+                        ><code class="text-gray-800 dark:text-gray-200"><span class="text-purple-600 dark:text-purple-400">def</span> <span class="text-blue-600 dark:text-blue-400">fibonacci</span>(n):
+    <span class="text-purple-600 dark:text-purple-400">if</span> n <= <span class="text-green-600 dark:text-green-400">1</span>:
+        <span class="text-purple-600 dark:text-purple-400">return</span> n
+    <span class="text-purple-600 dark:text-purple-400">else</span>:
+        <span class="text-purple-600 dark:text-purple-400">return</span> fibonacci(n-<span class="text-green-600 dark:text-green-400">1</span>) + fibonacci(n-<span class="text-green-600 dark:text-green-400">2</span>)
+
+<span class="text-gray-500 dark:text-gray-400"># EnCode provides real-time error checking</span>
+<span class="text-gray-500 dark:text-gray-400"># and syntax highlighting out of the box</span>
+<span class="text-purple-600 dark:text-purple-400">for</span> i <span class="text-purple-600 dark:text-purple-400">in</span> <span class="text-blue-600 dark:text-blue-400">range</span>(<span class="text-green-600 dark:text-green-400">10</span>):
+    <span class="text-blue-600 dark:text-blue-400">print</span>(fibonacci(i))</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="py-16 bg-gray-50 dark:bg-gray-900">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-16 animate-fade-in">
+                    <h2 class="text-3xl font-bold mb-4">Powerful Features</h2>
+                    <p
+                        class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
+                    >
+                        EnCode combines the performance of Rust with the
+                        flexibility of plugins to create the perfect development
+                        environment.
+                    </p>
+                </div>
+
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    <!-- Feature 1 -->
+                    <div
+                        class="feature-card bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                        style="animation-delay: 0.1s"
+                    >
+                        <div
+                            class="w-12 h-12 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <i
+                                class="fas fa-bolt text-primary-light dark:text-primary-dark text-xl"
+                            ></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Blazing Fast</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Built with Rust and GTK4, EnCode delivers native
+                            performance that keeps up with your workflow.
+                        </p>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div
+                        class="feature-card bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                        style="animation-delay: 0.2s"
+                    >
+                        <div
+                            class="w-12 h-12 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <i
+                                class="fas fa-puzzle-piece text-primary-light dark:text-primary-dark text-xl"
+                            ></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Extensible</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Add any functionality you need through plugins. The
+                            entire IDE is designed for customization.
+                        </p>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div
+                        class="feature-card bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                        style="animation-delay: 0.3s"
+                    >
+                        <div
+                            class="w-12 h-12 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <i
+                                class="fas fa-code text-primary-light dark:text-primary-dark text-xl"
+                            ></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Python First</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Optimized for Python development with Pyright
+                            integration for real-time error checking.
+                        </p>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div
+                        class="feature-card bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                        style="animation-delay: 0.4s"
+                    >
+                        <div
+                            class="w-12 h-12 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <i
+                                class="fas fa-palette text-primary-light dark:text-primary-dark text-xl"
+                            ></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Custom Themes</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Choose from beautiful built-in themes or create your
+                            own using GTK's theming system.
+                        </p>
+                    </div>
+
+                    <!-- Feature 5 -->
+                    <div
+                        class="feature-card bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                        style="animation-delay: 0.5s"
+                    >
+                        <div
+                            class="w-12 h-12 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <i
+                                class="fas fa-shield-alt text-primary-light dark:text-primary-dark text-xl"
+                            ></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Memory Safe</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Rust's memory safety guarantees mean fewer crashes
+                            and more reliable performance.
+                        </p>
+                    </div>
+
+                    <!-- Feature 6 -->
+                    <div
+                        class="feature-card bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                        style="animation-delay: 0.6s"
+                    >
+                        <div
+                            class="w-12 h-12 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <i
+                                class="fas fa-heart text-primary-light dark:text-primary-dark text-xl"
+                            ></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Open Source</h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Completely free and open source. Contribute or fork
+                            it on GitHub.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screenshots Section -->
+        <section id="screenshots" class="py-16">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-16 animate-fade-in">
+                    <h2 class="text-3xl font-bold mb-4">
+                        See EnCode in Action
+                    </h2>
+                    <p
+                        class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
+                    >
+                        A clean, modern interface that stays out of your way
+                        while providing all the tools you need.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Screenshot 1 -->
+                    <div class="animate-slide-up" style="animation-delay: 0.1s">
+                        <div
+                            class="rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
+                        >
+                            <div class="bg-gray-800 p-2 flex space-x-2">
+                                <div
+                                    class="w-3 h-3 rounded-full bg-red-500"
+                                ></div>
+                                <div
+                                    class="w-3 h-3 rounded-full bg-yellow-500"
+                                ></div>
+                                <div
+                                    class="w-3 h-3 rounded-full bg-green-500"
+                                ></div>
+                            </div>
+                            <div
+                                class="bg-surface-light dark:bg-surface-dark p-4"
+                            >
+                                <div class="mockup-code">
+                                    <pre
+                                        class="text-sm"
+                                    ><code><span class="text-purple-600 dark:text-purple-400">import</span> numpy <span class="text-purple-600 dark:text-purple-400">as</span> np
+<span class="text-purple-600 dark:text-purple-400">import</span> matplotlib.pyplot <span class="text-purple-600 dark:text-purple-400">as</span> plt
+
+x = np.linspace(<span class="text-green-600 dark:text-green-400">0</span>, <span class="text-green-600 dark:text-green-400">10</span>, <span class="text-green-600 dark:text-green-400">100</span>)
+y = np.sin(x)
+
+plt.plot(x, y)
+plt.title(<span class="text-yellow-600 dark:text-yellow-400">'Sine Wave'</span>)
+plt.show()</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <p
+                            class="mt-2 text-center text-gray-600 dark:text-gray-400"
+                        >
+                            Python development with syntax highlighting
+                        </p>
+                    </div>
+
+                    <!-- Screenshot 2 -->
+                    <div class="animate-slide-up" style="animation-delay: 0.2s">
+                        <div
+                            class="rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
+                        >
+                            <div class="bg-gray-800 p-2 flex space-x-2">
+                                <div
+                                    class="w-3 h-3 rounded-full bg-red-500"
+                                ></div>
+                                <div
+                                    class="w-3 h-3 rounded-full bg-yellow-500"
+                                ></div>
+                                <div
+                                    class="w-3 h-3 rounded-full bg-green-500"
+                                ></div>
+                            </div>
+                            <div
+                                class="bg-surface-light dark:bg-surface-dark p-4"
+                            >
+                                <div class="flex space-x-4">
+                                    <div class="w-1/4">
+                                        <div class="space-y-2">
+                                            <div class="text-sm font-medium">
+                                                Explorer
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                src/
+                                            </div>
+                                            <div
+                                                class="text-sm text-gray-500 pl-4"
+                                            >
+                                                main.py
+                                            </div>
+                                            <div
+                                                class="text-sm text-gray-500 pl-4"
+                                            >
+                                                utils.py
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                tests/
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="w-3/4">
+                                        <div class="text-sm">
+                                            <div
+                                                class="flex justify-between items-center mb-2"
+                                            >
+                                                <span class="font-medium"
+                                                    >Problems</span
+                                                >
+                                                <span class="text-gray-500"
+                                                    >3</span
+                                                >
+                                            </div>
+                                            <div class="space-y-1">
+                                                <div class="flex items-start">
+                                                    <span
+                                                        class="text-red-500 mr-2"
+                                                        >●</span
+                                                    >
+                                                    <span
+                                                        >main.py:12 - Undefined
+                                                        variable 'x'</span
+                                                    >
+                                                </div>
+                                                <div class="flex items-start">
+                                                    <span
+                                                        class="text-yellow-500 mr-2"
+                                                        >●</span
+                                                    >
+                                                    <span
+                                                        >utils.py:5 - Unused
+                                                        import 'os'</span
+                                                    >
+                                                </div>
+                                                <div class="flex items-start">
+                                                    <span
+                                                        class="text-red-500 mr-2"
+                                                        >●</span
+                                                    >
+                                                    <span
+                                                        >main.py:25 - Missing
+                                                        return statement</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p
+                            class="mt-2 text-center text-gray-600 dark:text-gray-400"
+                        >
+                            Real-time error checking with Pyright
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download Section -->
+        <section id="download" class="py-16 bg-gray-50 dark:bg-gray-900">
+            <div class="container mx-auto px-4">
+                <div class="max-w-3xl mx-auto text-center animate-fade-in">
+                    <h2 class="text-3xl font-bold mb-6">Get EnCode Today</h2>
+                    <p class="text-lg mb-8 text-gray-600 dark:text-gray-300">
+                        Available for Linux, Windows, and macOS. Join thousands
+                        of developers who have already switched to EnCode.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                        <!-- Linux -->
+                        <div
+                            class="bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                            style="animation-delay: 0.1s"
+                        >
+                            <div
+                                class="w-16 h-16 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4 mx-auto"
+                            >
+                                <i
+                                    class="fab fa-linux text-primary-light dark:text-primary-dark text-2xl"
+                                ></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Linux</h3>
+                            <div class="space-y-2">
+                                <a
+                                    href="#"
+                                    class="block btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                                >
+                                    .deb (Debian/Ubuntu)
+                                </a>
+                                <a
+                                    href="#"
+                                    class="block btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                                >
+                                    .rpm (Fedora/RHEL)
+                                </a>
+                                <a
+                                    href="#"
+                                    class="block btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                                >
+                                    AppImage
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Windows -->
+                        <div
+                            class="bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                            style="animation-delay: 0.2s"
+                        >
+                            <div
+                                class="w-16 h-16 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4 mx-auto"
+                            >
+                                <i
+                                    class="fab fa-windows text-primary-light dark:text-primary-dark text-2xl"
+                                ></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Windows</h3>
+                            <div class="space-y-2">
+                                <a
+                                    href="#"
+                                    class="block btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                                >
+                                    .exe Installer
+                                </a>
+                                <a
+                                    href="#"
+                                    class="block btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                                >
+                                    Portable Zip
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- macOS -->
+                        <div
+                            class="bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 animate-slide-up"
+                            style="animation-delay: 0.3s"
+                        >
+                            <div
+                                class="w-16 h-16 bg-primary-light/10 dark:bg-primary-dark/10 rounded-lg flex items-center justify-center mb-4 mx-auto"
+                            >
+                                <i
+                                    class="fab fa-apple text-primary-light dark:text-primary-dark text-2xl"
+                                ></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">macOS</h3>
+                            <div class="space-y-2">
+                                <a
+                                    href="#"
+                                    class="block btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                                >
+                                    .dmg Package
+                                </a>
+                                <a
+                                    href="#"
+                                    class="block btn-primary text-white px-4 py-2 rounded-md font-medium hover:opacity-90 transition-opacity"
+                                >
+                                    Homebrew
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="animate-fade-in" style="animation-delay: 0.4s">
+                        <h3 class="text-xl font-bold mb-4">
+                            Build from Source
+                        </h3>
+                        <div
+                            class="bg-surface-light dark:bg-surface-dark p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-left max-w-2xl mx-auto mb-6"
+                        >
+                            <pre
+                                class="code-block text-sm overflow-x-auto"
+                            ><code class="text-gray-800 dark:text-gray-200"><span class="text-green-600 dark:text-green-400"># Clone the repository</span>
+git clone https://github.com/encode-ide/encode.git
+cd encode
+
+<span class="text-green-600 dark:text-green-400"># Install dependencies</span>
+cargo install --path .
+
+<span class="text-green-600 dark:text-green-400"># Run EnCode</span>
+encode</code></pre>
+                        </div>
+                        <a
+                            href="https://github.com"
+                            target="_blank"
+                            class="inline-flex items-center btn-secondary text-white px-6 py-3 rounded-md font-medium hover:opacity-90 transition-opacity"
+                        >
+                            <i class="fab fa-github mr-2"></i> View on GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer
+            class="bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-700 py-8"
+        >
+            <div class="container mx-auto px-4">
+                <div
+                    class="flex flex-col md:flex-row justify-between items-center"
+                >
+                    <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                        <div
+                            class="w-8 h-8 bg-primary-light dark:bg-primary-dark rounded-md flex items-center justify-center"
+                        >
+                            <i class="fas fa-code text-white"></i>
+                        </div>
+                        <span class="text-lg font-bold">EnCode</span>
+                    </div>
+
+                    <div class="flex space-x-6 mb-4 md:mb-0">
+                        <a
+                            href="#"
+                            class="text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors"
+                        >
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a
+                            href="#"
+                            class="text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors"
+                        >
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a
+                            href="#"
+                            class="text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors"
+                        >
+                            <i class="fab fa-discord"></i>
+                        </a>
+                    </div>
+
+                    <div class="text-gray-600 dark:text-gray-300 text-sm">
+                        &copy; 2023 EnCode IDE. All rights reserved.
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            // Theme toggle
+            const themeToggle = document.getElementById("theme-toggle");
+            const html = document.documentElement;
+
+            themeToggle.addEventListener("click", () => {
+                html.classList.toggle("dark");
+                localStorage.setItem(
+                    "theme",
+                    html.classList.contains("dark") ? "dark" : "light",
+                );
+            });
+
+            // Check for saved theme preference
+            if (
+                localStorage.getItem("theme") === "dark" ||
+                (!localStorage.getItem("theme") &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches)
+            ) {
+                html.classList.add("dark");
+            } else {
+                html.classList.remove("dark");
+            }
+
+            // Mobile menu toggle
+            const mobileMenuButton =
+                document.getElementById("mobile-menu-button");
+            const mobileMenu = document.getElementById("mobile-menu");
+
+            mobileMenuButton.addEventListener("click", () => {
+                mobileMenu.classList.toggle("hidden");
+            });
+
+            // Close mobile menu when clicking on a link
+            document.querySelectorAll("#mobile-menu a").forEach((link) => {
+                link.addEventListener("click", () => {
+                    mobileMenu.classList.add("hidden");
+                });
+            });
+
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+                anchor.addEventListener("click", function (e) {
+                    e.preventDefault();
+
+                    const targetId = this.getAttribute("href");
+                    if (targetId === "#") return;
+
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: "smooth",
+                        });
+                    }
+                });
+            });
+
+            // Animation on scroll
+            const animateOnScroll = () => {
+                const elements = document.querySelectorAll(
+                    ".animate-fade-in, .animate-slide-up",
+                );
+
+                elements.forEach((element) => {
+                    const elementTop = element.getBoundingClientRect().top;
+                    const windowHeight = window.innerHeight;
+
+                    if (elementTop < windowHeight - 100) {
+                        element.style.opacity = "1";
+                    }
+                });
+            };
+
+            // Initial check
+            animateOnScroll();
+
+            // Check on scroll
+            window.addEventListener("scroll", animateOnScroll);
+        </script>
+    </body>
+</html>

@@ -17,7 +17,7 @@ use gtk4::{
     TreeViewColumn,
     WrapMode,
 };
-use gtk4::gdk_pixbuf::{prelude::*, Pixbuf};
+use gtk4::gdk_pixbuf::Pixbuf;
 use sourceview5::{prelude::*, Buffer, StyleSchemeManager, View};
 use glib::clone;
 
@@ -56,7 +56,7 @@ pub fn build_ui(window: ApplicationWindow, dir: &PathBuf) -> idl::Gui
     let paned = Paned::builder()
         .orientation(Orientation::Horizontal)
         .vexpand(true)
-        .position(100)
+        .position(150)
         .build();
     vbox.append(&paned);
     let build_tree_view_ret = build_tree_view(&paned, Arc::clone(&dir));
