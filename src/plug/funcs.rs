@@ -7,7 +7,6 @@ macro_rules! create_default_func {
             >,
         >
         {
-            println!(stringify!($name));
             let ret = std::option::Option::Some(
                 std::collections::HashMap::from_iter(
                     (*super::LIBRARIES).as_ref()?.iter().filter_map(
@@ -22,7 +21,6 @@ macro_rules! create_default_func {
                     ),
                 ),
             );
-            println!("{:?}", ret.as_ref().map(|r| r.iter().count()));
             return ret;
         }
     };

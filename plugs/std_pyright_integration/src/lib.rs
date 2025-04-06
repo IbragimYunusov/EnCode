@@ -173,7 +173,6 @@ pub fn load_diag(store: &TreeStore, diags: &Vec<Diagnostic>) -> idl::Res
             }
         }
     }
-    println!("{:#?}", map);
     fn inner(
         map: &HashMap<PathBuf, u8>,
         store: &TreeStore,
@@ -193,9 +192,7 @@ pub fn load_diag(store: &TreeStore, diags: &Vec<Diagnostic>) -> idl::Res
                 }
             }
             if let Ok(cwd) = std::env::current_dir() {
-                println!("ya v {}", &*path_end.to_string_lossy());
                 let ret = *map.get(&cwd.join(&path_end)).unwrap_or(&0);
-                println!("{:?}", cwd.join(&path_end));
                 match ret {
                     3 => ERROR_STATUS.with(|p| if let Some(pb) = p.as_ref() {
                         store.set_value(it, 1, &pb.to_value())
@@ -333,7 +330,6 @@ fn add_hs_in_vs(
         let s = get_attr!(s.first_child());
         let s = get_attr!(s.downcast_ref::<gtk4::Label>());
         let s = s.label().to_string();
-        println!("{:#?}", modificated);
         if modificated.borrow().contains(&s) {
             return Ok(());
         }
@@ -538,7 +534,6 @@ fn add_hs_in_vs(
             }();},
         ));
         view.add_controller(motion_controller);
-        println!("{:#?}", modificated.borrow());
         return Ok(());
     }() {
         if let Some(gui) = unsafe{(*data).gui.as_ref()} {

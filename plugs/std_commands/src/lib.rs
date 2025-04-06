@@ -52,6 +52,12 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
                     new, new_dir;
                 };
             };
+            edit {
+                tab {
+                    close, close_cur_tab;
+                    close_all, close_all_tabs;
+                };
+            };
         }}
         return Ok(());
     }().err().map(|e| e.to_string()))
@@ -478,4 +484,28 @@ pub fn get_icon(name: &str) -> idl::Res<gtk4::gdk_pixbuf::Pixbuf>
         ),
     )?;
     return Ok(pixbuf);
+}
+
+
+#[no_mangle]
+pub extern "C" fn close_cur_tab(data: idl::Data) -> idl::Ret
+{
+    Box::new(|| -> idl::Res {
+        let notebook = get_gui_el!(data.gui.notebook);
+        notebook.remove_page(notebook.current_page());
+        return Ok(());
+    }().err().map(|e| e.to_string()))
+}
+
+
+#[no_mangle]
+pub extern "C" fn close_all_tabs(data: idl::Data) -> idl::Ret
+{
+    Box::new(|| -> idl::Res {
+        let notebook = get_gui_el!(data.gui.notebook);
+        for i in 0..notebook.n_pages() {
+            notebook.remove_page(Some(i));
+        }
+        return Ok(());
+    }().err().map(|e| e.to_string()))
 }

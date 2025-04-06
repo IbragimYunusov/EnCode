@@ -224,9 +224,7 @@ fn build_tab(
             let gesture = GestureClick::new();
             gesture.connect_pressed(clone!(
                 #[weak] notebook,
-                move |_, _, _, _| {
-                    notebook.remove_page(notebook.current_page());
-                },
+                move |_, _, _, _| notebook.remove_page(notebook.current_page()),
             ));
             close_label.add_controller(gesture);
             close_label

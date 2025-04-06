@@ -68,15 +68,12 @@ pub fn main() -> ExitCode {
                 unsafe {
                     crate::plug::funcs::before_showing_window(&mut *data);
                 }
-                println!("fdjhfgjhkjhkfghjkhjk");
                 data.gui.as_ref().map(|g| g.window.present());
-                println!("dkfjsdklfj");
                 unsafe {
                     crate::plug::funcs::after_showing_window(&mut *data);
                 }
             });
         });
-        println!("app.run()");
         let ret = app.run();
         if let AppType::EDITOR(_) = *APP_TYPE {
             INTER_DATA.with_borrow_mut(|data| unsafe {

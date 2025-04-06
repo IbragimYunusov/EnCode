@@ -50,6 +50,10 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
                 };
             };
             edit {
+                tab {
+                    close, "<Ctrl>W";
+                    close_all, "<Ctrl><Shift>W";
+                };
                 undo_redo {
                     undo, "<Ctrl>Z";
                     redo, "<Ctrl><Shift>Z";
