@@ -1,8 +1,3 @@
-use std::ffi::{CStr, c_char};
-use std::borrow::Cow;
-use std::ptr::null;
-
-
 macro_rules! create_default_func {
     {$name:ident($($params:ident: $types:ty),*$(,)?)} => {
         pub unsafe fn $name($($params: $types),*) -> std::option::Option<

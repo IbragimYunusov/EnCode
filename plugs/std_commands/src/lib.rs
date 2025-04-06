@@ -4,7 +4,7 @@ use std::io::Write;
 use gtk4::prelude::*;
 use gtk4::glib::object::Cast;
 
-use idl::{get_attr, get_gui_el, get_str_opt};
+use idl::{get_attr, get_gui_el};
 
 
 macro_rules! create_actions {

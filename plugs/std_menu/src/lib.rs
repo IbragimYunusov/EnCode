@@ -69,7 +69,7 @@ pub extern "C" fn before_showing_window(data: idl::Data) -> idl::Ret
 
 fn create_menu() -> idl::Res<gio::Menu>
 {
-    let menu = menu!{
+    return Ok(menu!{
         "Проект", project {
             "Проект", project {
                 "Создать Новый", new;
@@ -122,6 +122,5 @@ fn create_menu() -> idl::Res<gio::Menu>
                 "Использовать виртуальное окружение", use_env;
             };
         };
-    };
-    return Ok(menu);
+    });
 }

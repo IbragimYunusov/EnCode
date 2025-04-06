@@ -1,5 +1,3 @@
-use gtk4::prelude::*;
-
 use std::io::Write;
 use std::path::PathBuf;
 use std::error::Error;

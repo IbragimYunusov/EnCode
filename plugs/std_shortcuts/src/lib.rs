@@ -1,7 +1,5 @@
 use gtk4::prelude::*;
-use sourceview5::prelude::*;
-
-use idl::{get_gui_el, get_attr};
+use idl::get_attr;
 
 
 macro_rules! create_shortcuts {

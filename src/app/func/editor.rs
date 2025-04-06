@@ -1,5 +1,4 @@
 use gtk4::prelude::*;
-use gtk4::gdk_pixbuf::prelude::*;
 use std::io::Write;
 
 use crate::app::ui::{
