@@ -9,7 +9,7 @@ pub type Res<T=()> = Result<T, Box<dyn std::error::Error>>;
 
 pub fn get_hex_fg_color() -> String
 {
-    return if is_current_theme_dark() {"acb4c1"} else {"ffffff"}.to_string();
+    return if is_current_theme_dark() {"acb4c1"} else {"000000"}.to_string();
 }
 
 
